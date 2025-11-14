@@ -1,96 +1,78 @@
 import Ball from './Ball.js';
 import Paddle from './Paddle.js';
-// Importe AIPaddle se quiser usá-lo
 import AIPaddle from './AIPaddle.js';
 import { CollisionSystem } from './CollisionSystem.js';
 import * as Config from './constants.js';
 
 export default class PongGame {
-	// Recebe os elementos do DOM via injeção de dependência
-	constructor(uiElements) {
+
+	// O construtor agora aceita um "callback" (uma função)
+	// que será chamado quando o jogo terminar.
+	constructor(uiElements, onGameOverCallback) {
+		// --- Configuração da UI e Canvas ---
 		this.canvas = uiElements.canvas;
 		this.ctx = this.canvas.getContext('2d');
 		this.canvas.width = Config.CANVAS_WIDTH;
 		this.canvas.height = Config.CANVAS_HEIGHT;
 
+		// Elementos da UI (placar)
 		this.ui = uiElements;
-		this.keys = {};
-		this.isRunning = false;
-		this.state = 'MENU';
-		this.gameMode = null; // 'twoPlayers' ou 'aiMode'
 
+		// Salva a função de callback para ser usada depois
+		this.onGameOverCallback = onGameOverCallback;
+
+		// --- Estado do Jogo ---
+		this.keys = {};
+		this.state = 'IDLE'; // Estado inicial (ocioso)
+		this.animationId = null; // ID para parar o requestAnimationFrame
+
+		// --- Objetos do Jogo ---
 		this.ball = new Ball(this.canvas.width, this.canvas.height);
 		this.paddle1 = new Paddle(Config.PADDLE_PADDING, this.canvas.height);
-		this.paddle2 = new Paddle(this.canvas.width - Config.PADDLE_PADDING - Config.PADDLE_WIDTH, this.canvas.height);
 
-		this.setupEventListeners();
+		// Altere esta linha para new AIPaddle(...) para jogar contra a IA
+		this.paddle2 = new AIPaddle(this.canvas.width - Config.PADDLE_PADDING - Config.PADDLE_WIDTH, this.canvas.height);
 	}
 
-	setupEventListeners() {
-		document.addEventListener('keydown', (e) => this.keys[e.key] = true);
-		document.addEventListener('keyup', (e) => this.keys[e.key] = false);
+	// --- Métodos de Controle ---
 
-		// Botões de seleção de modo
-		this.ui.twoPlayersBtn.addEventListener('click', () => this.selectGameMode('twoPlayers'));
-		this.ui.aiModeBtn.addEventListener('click', () => this.selectGameMode('aiMode'));
-
-		this.ui.startButton.addEventListener('click', () => this.startGame());
-
-		document.addEventListener('keydown', (e) => {
-			if (e.key === 'Enter' && this.state !== 'PLAYING') {
-				this.startGame();
-			}
-		});
-	}
-
-	selectGameMode(mode) {
-		this.gameMode = mode;
-
-		// Atualiza os botões visualmente
-		this.ui.twoPlayersBtn.classList.toggle('active', mode === 'twoPlayers');
-		this.ui.aiModeBtn.classList.toggle('active', mode === 'aiMode');
-
-		// Mostra a seção de inputs
-		this.ui.playerInputsSection.style.display = 'block';
-
-		// Ajusta o label do Player 2
-		if (mode === 'aiMode') {
-			this.ui.player2Input.value = 'IA';
-			this.ui.player2Input.disabled = true;
-		} else {
-			this.ui.player2Input.value = 'Player 2';
-			this.ui.player2Input.disabled = false;
-		}
-	}
-
+	// Este método é chamado pelo main.js para iniciar o jogo
 	startGame() {
-		if (!this.gameMode) {
-			alert('Por favor, escolha um modo de jogo!');
-			return;
-		}
-
-		this.ui.gameMenu.classList.add('hidden');
-		this.createPaddles();
+		console.log("Iniciando o Jogo...");
 		this.resetGame();
 		this.state = 'PLAYING';
-		this.gameLoop();
+		this.setupEventListeners(); // Configura os controles
+		this.gameLoop(); // Inicia o loop
 	}
 
-	createPaddles() {
-		this.paddle1 = new Paddle(Config.PADDLE_PADDING, this.canvas.height);
-
-		if (this.gameMode === 'aiMode') {
-			this.paddle2 = new AIPaddle(
-				this.canvas.width - Config.PADDLE_PADDING - Config.PADDLE_WIDTH,
-				this.canvas.height
-			);
-		} else {
-			this.paddle2 = new Paddle(
-				this.canvas.width - Config.PADDLE_PADDING - Config.PADDLE_WIDTH,
-				this.canvas.height
-			);
-		}
+	// Este método é chamado pelo main.js se o usuário
+	// clicar em "Sair" no meio da partida.
+	stopGame() {
+		console.log("Parando o Jogo...");
+		this.state = 'STOPPED';
+		cancelAnimationFrame(this.animationId); // Para o loop
+		this.removeEventListeners(); // Remove os controles
 	}
+
+	// --- Configuração de Eventos ---
+
+	// Precisamos guardar as referências das funções
+	// para que possamos removê-las depois.
+	setupEventListeners() {
+		this.keyDownHandler = (e) => this.keys[e.key] = true;
+		this.keyUpHandler = (e) => this.keys[e.key] = false;
+
+		document.addEventListener('keydown', this.keyDownHandler);
+		document.addEventListener('keyup', this.keyUpHandler);
+	}
+
+	// Função para remover os listeners e evitar "input fantasma"
+	removeEventListeners() {
+		document.removeEventListener('keydown', this.keyDownHandler);
+		document.removeEventListener('keyup', this.keyUpHandler);
+	}
+
+	// --- Lógica Principal do Jogo ---
 
 	resetGame() {
 		this.paddle1.score = 0;
@@ -102,8 +84,6 @@ export default class PongGame {
 	}
 
 	update() {
-		if (this.state !== 'PLAYING') return;
-
 		// Movimenta as raquetes
 		if (this.keys[Config.P1_UP] || this.keys[Config.P1_UP.toUpperCase()]) {
 			this.paddle1.moveUp();
@@ -120,16 +100,15 @@ export default class PongGame {
 
 		// Atualiza posições
 		this.paddle1.update();
-		// O update da paddle2 chama a lógica de IA se for uma AIPaddle
-		this.paddle2.update(this.ball);
+		this.paddle2.update(this.ball); // O 'ball' só é usado se for AIPaddle
 		this.ball.update();
 
-		// Verifica colisões
+		// Colisões
 		CollisionSystem.checkWallCollision(this.ball, this.canvas.height);
 		CollisionSystem.checkPaddleCollision(this.ball, this.paddle1);
 		CollisionSystem.checkPaddleCollision(this.ball, this.paddle2);
 
-		// Verifica pontuação
+		// Pontuação
 		const score = CollisionSystem.checkScore(this.ball, this.canvas.width);
 		if (score === 1) {
 			this.paddle1.score++;
@@ -141,7 +120,7 @@ export default class PongGame {
 			this.ball.reset(this.canvas.width, this.canvas.height);
 		}
 
-		// Verifica se alguém ganhou
+		// Fim de jogo
 		if (this.paddle1.score >= Config.WINNING_SCORE || this.paddle2.score >= Config.WINNING_SCORE) {
 			this.gameOver();
 		}
@@ -153,10 +132,11 @@ export default class PongGame {
 	}
 
 	draw() {
+		// Limpa e desenha o fundo
 		this.ctx.fillStyle = '#000000';
 		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-		// Linha central
+		// Linha e círculo central
 		this.ctx.strokeStyle = '#ffffff';
 		this.ctx.setLineDash([5, 15]);
 		this.ctx.beginPath();
@@ -164,11 +144,8 @@ export default class PongGame {
 		this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
 		this.ctx.stroke();
 		this.ctx.setLineDash([]);
-
-		// Círculo central
 		this.ctx.beginPath();
 		this.ctx.arc(this.canvas.width / 2, this.canvas.height / 2, 50, 0, Math.PI * 2);
-		this.ctx.strokeStyle = '#ffffff';
 		this.ctx.stroke();
 
 		// Objetos
@@ -177,27 +154,42 @@ export default class PongGame {
 		this.paddle2.draw(this.ctx);
 	}
 
+	// O jogo não dá mais 'alert()' nem mostra o menu.
+	// Ele chama o 'callback' que o main.js forneceu.
 	gameOver() {
 		this.state = 'GAME_OVER';
-		cancelAnimationFrame(this.animationId);
+		cancelAnimationFrame(this.animationId); // Para o loop
+		this.removeEventListeners(); // Remove os controles
 
+		// Determina o vencedor
 		const winner = this.paddle1.score >= Config.WINNING_SCORE ?
-			this.ui.player1Input.value || 'Player 1' :
-			this.ui.player2Input.value || 'Player 2';
+			'Player 1' :
+			'Player 2';
 
-		setTimeout(() => {
-			alert(`Game Over! ${winner} wins!`);
-			this.ui.gameMenu.classList.remove('hidden');
-			this.state = 'MENU';
-		}, 500);
+		// Cria um objeto com o placar final
+		const score = {
+			p1: this.paddle1.score,
+			p2: this.paddle2.score
+		};
+
+		// Chama a função 'onGameOverCallback' que o main.js nos passou
+		if (this.onGameOverCallback) {
+			this.onGameOverCallback(winner, score);
+		}
 	}
 
+	// O gameLoop agora verifica o 'state'
 	gameLoop = () => {
+		// Se o estado não for 'PLAYING', o loop para
+		if (this.state !== 'PLAYING') {
+			cancelAnimationFrame(this.animationId);
+			return;
+		}
+
 		this.update();
 		this.draw();
 
-		if (this.state === 'PLAYING') {
-			this.animationId = requestAnimationFrame(this.gameLoop);
-		}
+		// Continua o loop
+		this.animationId = requestAnimationFrame(this.gameLoop);
 	}
 }

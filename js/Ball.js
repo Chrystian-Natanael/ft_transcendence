@@ -34,7 +34,10 @@ export default class Ball {
 	}
 
 	increaseSpeed() {
-		this.speedX *= 1.02;
-		this.speedY *= 1.02;
+		// Aumenta a velocidade, mas com um limite
+		if (Math.abs(this.speedX) < this.baseSpeed * 3) {
+			this.speedX *= 1.02;
+			this.speedY *= 1.02;
+		}
 	}
 }

@@ -12,8 +12,7 @@ export default class Paddle {
 	}
 
 	update() {
-		// Lógica de movimento agora é tratada em PongGame
-		// Este update apenas garante que a raquete fique nos limites
+		// Mantém a raquete nos limites da tela
 		if (this.y < 0) this.y = 0;
 		if (this.y + this.height > this.canvasHeight) {
 			this.y = this.canvasHeight - this.height;
@@ -32,7 +31,7 @@ export default class Paddle {
 		ctx.fillStyle = '#ffffff';
 		ctx.fillRect(this.x, this.y, this.width, this.height);
 
-		// Efeito visual (Player 1)
+		// Efeito visual (Player)
 		ctx.fillStyle = '#4444ff';
 		ctx.fillRect(this.x, this.y + this.height / 2 - 10, this.width, 20);
 	}

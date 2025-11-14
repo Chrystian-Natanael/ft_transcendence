@@ -3,49 +3,56 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Pong Game - ft_transcendence</title>
+	<title>SPA Pong - ft_transcendence</title>
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
-	<div id="gameContainer">
-		<div id="gameHeader">
-			<h1>PONG</h1>
-			<div id="score">
-				<span id="player1Score">0</span> - <span id="player2Score">0</span>
-			</div>
+
+	<div id="login-view" class="view">
+		<div class="menu-content">
+			<h2>Bem-vindo ao Pong</h2>
+			<p class="subtitle">Faça login para continuar ou entre como visitante.</p>
+
+			<button id="loginGuestButton" class="cta-button">Entrar como Visitante</button>
 		</div>
+	</div>
 
-		<div id="gameArea">
-			<canvas id="pongCanvas"></canvas>
+	<div id="dashboard-view" class="view hidden">
+		<div class="dashboard-content">
+			<h1>Olá, <span id="dashboard-username">Visitante</span>!</h1>
+			<p>Bem-vindo ao seu dashboard.</p>
+
+			<button id="playGameButton" class="cta-button">Jogar Agora!</button>
+
+			<h3>Seu Histórico de Partidas (Sessão)</h3>
+			<ul id="match-history-list">
+				<li>(Nenhuma partida jogada ainda)</li>
+			</ul>
 		</div>
+	</div>
 
-		<div id="gameControls">
-			<div class="control-group">
-				<h3>Player 1</h3>
-				<p>W ⬆️ | S ⬇️</p>
-			</div>
-			<div class="control-group">
-				<h3>Player 2</h3>
-				<p>↑ ⬆️ | ↓ ⬇️</p>
-			</div>
-		</div>
-
-		<div id="gameMenu">
-			<div class="menu-content">
-				<h2>Pong Tournament</h2>
-
-				<div class="game-mode-selection">
-					<h3>Escolha o Modo de Jogo</h3>
-					<button id="twoPlayersBtn" class="mode-btn">2 Jogadores</button>
-					<button id="aiModeBtn" class="mode-btn">Jogar contra IA</button>
-				</div>
-
-				<div class="player-inputs" id="playerInputsSection" style="display: none;">
-					<input type="text" id="player1Name" placeholder="Player 1 Name" maxlength="10" value="Player 1">
-					<input type="text" id="player2Name" placeholder="Player 2 Name" maxlength="10" value="Player 2">
-					<button id="startGame">Iniciar Jogo</button>
+	<div id="game-view" class="view hidden">
+		<div id="gameContainer">
+			<div id="gameHeader">
+				<h1>PONG</h1>
+				<div id="score">
+					<span id="player1Score">0</span> - <span id="player2Score">0</span>
 				</div>
 			</div>
+			<div id="gameArea">
+				<canvas id="pongCanvas"></canvas>
+			</div>
+			<div id="gameControls">
+				<div class="control-group">
+					<h3>Player 1</h3>
+					<p>W ⬆️ | S ⬇️</p>
+				</div>
+				<div class="control-group">
+					<h3>Player 2</h3>
+					<p>↑ ⬆️ | ↓ ⬇️</p>
+				</div>
+			</div>
+			<button id="quitGameButton" class="quit-button">Sair da Partida</button>
 		</div>
 	</div>
 

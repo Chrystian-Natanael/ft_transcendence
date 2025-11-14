@@ -18,11 +18,13 @@ export default class AIPaddle extends Paddle {
 		const paddleCenter = this.y + this.height / 2;
 		const ballCenter = ball.y;
 
+		// Nível de "erro" ou "lentidão" da IA
 		if (Math.random() < 0.02) return;
 
 		const error = (Math.random() - 0.5) * 20;
 		const targetY = ballCenter + error - this.height / 2;
 
+		// Move a IA de forma mais suave (70% da velocidade)
 		if (targetY > this.y) {
 			this.y += Math.min(this.speed * 0.7, targetY - this.y);
 		} else if (targetY < this.y) {

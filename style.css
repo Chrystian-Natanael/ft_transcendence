@@ -1,3 +1,4 @@
+/* Reset Básico */
 * {
 	margin: 0;
 	padding: 0;
@@ -8,23 +9,114 @@ body {
 	font-family: 'Courier New', monospace;
 	background: linear-gradient(135deg, #1a1a2e, #16213e);
 	color: white;
-	display: flex;
+	overflow: hidden; /* Impede scroll da página inteira */
+}
+
+/* Estilos das Views
+  Isso garante que cada "página" ocupe a tela inteira
+*/
+.view {
+	width: 100%;
+	min-height: 100vh;
+	display: flex; /* Usamos flex para centralizar o conteúdo */
 	justify-content: center;
 	align-items: center;
-	min-height: 100vh;
-	overflow: hidden;
+	padding: 20px;
 }
 
-#gameContainer {
-	text-align: center;
+.hidden {
+	display: none !important; /* A classe mais importante! */
+}
+
+/* Estilos dos Menus (Login e Dashboard) */
+.menu-content,
+.dashboard-content {
 	background: rgba(0, 0, 0, 0.7);
-	padding: 20px;
+	padding: 30px 40px;
 	border-radius: 15px;
 	box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+	border: 2px solid #00ffff;
+	text-align: center;
+	max-width: 500px;
+	width: 100%;
 }
 
-#gameHeader {
-	margin-bottom: 20px;
+.menu-content h2,
+.dashboard-content h1 {
+	color: #00ffff;
+	margin-bottom: 15px;
+	font-size: 2.5em;
+}
+
+.menu-content .subtitle,
+.dashboard-content p {
+	font-size: 1.2em;
+	color: #eee;
+	margin-bottom: 30px;
+}
+
+/* Botões */
+.cta-button {
+	background: #00ff88;
+	color: #000;
+	border: none;
+	padding: 12px 30px;
+	font-size: 1.2em;
+	border-radius: 25px;
+	cursor: pointer;
+	font-weight: bold;
+	transition: all 0.3s ease;
+	text-transform: uppercase;
+	margin: 5px;
+}
+
+.cta-button:hover {
+	background: #00ffff;
+	transform: scale(1.05);
+	box-shadow: 0 0 15px #00ffff;
+}
+
+.quit-button {
+	background: #ff4444;
+	color: white;
+	border: none;
+	padding: 10px 20px;
+	font-size: 1em;
+	border-radius: 20px;
+	cursor: pointer;
+	font-weight: bold;
+	margin-top: 20px;
+}
+
+.quit-button:hover {
+	background: #ff6666;
+}
+
+/* Dashboard Específico */
+.dashboard-content h3 {
+	color: #00ff88;
+	margin-top: 30px;
+	margin-bottom: 15px;
+}
+
+#match-history-list {
+	list-style: none;
+	padding: 0;
+	max-height: 200px;
+	overflow-y: auto;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 5px;
+	padding: 10px;
+}
+
+#match-history-list li {
+	padding: 8px;
+	border-bottom: 1px solid #333;
+}
+
+/* Estilos do Jogo (O seu CSS original) */
+#gameContainer {
+	text-align: center;
 }
 
 #gameHeader h1 {
@@ -49,6 +141,7 @@ body {
 	border-radius: 10px;
 	background: #000;
 	box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+	/* As dimensões são definidas no JS via constants.js */
 }
 
 #gameControls {
@@ -67,123 +160,4 @@ body {
 
 .control-group p {
 	font-size: 1.2em;
-}
-
-#gameMenu {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background: rgba(0, 0, 0, 0.9);
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	z-index: 1000;
-}
-
-.menu-content {
-	background: #1a1a2e;
-	padding: 40px;
-	border-radius: 15px;
-	border: 2px solid #00ffff;
-	text-align: center;
-}
-
-.menu-content h2 {
-	color: #00ffff;
-	margin-bottom: 30px;
-	font-size: 2.5em;
-}
-
-.player-inputs {
-	margin: 20px 0;
-}
-
-.player-inputs input {
-	display: block;
-	width: 200px;
-	padding: 10px;
-	margin: 10px auto;
-	background: #000;
-	border: 2px solid #00ffff;
-	border-radius: 5px;
-	color: white;
-	font-size: 1.1em;
-	text-align: center;
-}
-
-.player-inputs input::placeholder {
-	color: #666;
-}
-
-#startGame {
-	background: #00ff88;
-	color: #000;
-	border: none;
-	padding: 12px 30px;
-	font-size: 1.2em;
-	border-radius: 25px;
-	cursor: pointer;
-	font-weight: bold;
-	transition: all 0.3s ease;
-}
-
-#startGame:hover {
-	background: #00ffff;
-	transform: scale(1.05);
-	box-shadow: 0 0 15px #00ffff;
-}
-
-.hidden {
-	display: none !important;
-}
-
-.game-mode-selection {
-    margin: 20px 0;
-}
-
-.game-mode-selection h3 {
-    color: #00ff88;
-    margin-bottom: 20px;
-    font-size: 1.3em;
-}
-
-.mode-btn {
-    background: #00ffff;
-    color: #000;
-    border: 2px solid #00ffff;
-    padding: 12px 25px;
-    margin: 0 10px;
-    font-size: 1.1em;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-
-.mode-btn:hover {
-    background: #00ff88;
-    border-color: #00ff88;
-    transform: scale(1.05);
-    box-shadow: 0 0 15px #00ff88;
-}
-
-.mode-btn.active {
-    background: #00ff88;
-    border-color: #00ff88;
-    box-shadow: 0 0 15px #00ff88;
-}
-
-/* Responsive */
-@media (max-width: 850px) {
-	#pongCanvas {
-		width: 95vw;
-		height: auto;
-	}
-
-	#gameControls {
-		flex-direction: column;
-		gap: 15px;
-	}
 }

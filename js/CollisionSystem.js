@@ -1,7 +1,8 @@
-// Não precisa de 'default' pois exportamos múltiplos métodos estáticos
+// Lógica de colisão separada
 export class CollisionSystem {
+
 	static checkWallCollision(ball, canvasHeight) {
-		// ... (código idêntico ao original)
+		// Colisão com topo e base
 		if (ball.y - ball.radius <= 0) {
 			ball.y = ball.radius;
 			ball.speedY = Math.abs(ball.speedY);
@@ -12,7 +13,7 @@ export class CollisionSystem {
 	}
 
 	static checkPaddleCollision(ball, paddle) {
-		// ... (código idêntico ao original)
+		// Lógica de detecção de colisão AABB (Axis-Aligned Bounding Box)
 		const ballLeft = ball.x - ball.radius;
 		const ballRight = ball.x + ball.radius;
 		const ballTop = ball.y - ball.radius;
@@ -23,11 +24,13 @@ export class CollisionSystem {
 		const paddleTop = paddle.y;
 		const paddleBottom = paddle.y + paddle.height;
 
+		// Verifica se há colisão
 		if (ballRight >= paddleLeft &&
 			ballLeft <= paddleRight &&
 			ballBottom >= paddleTop &&
 			ballTop <= paddleBottom) {
 
+			// Se colidiu, chama a lógica de rebatida
 			this.handlePaddleBounce(ball, paddle);
 			return true;
 		}
@@ -35,31 +38,30 @@ export class CollisionSystem {
 		return false;
 	}
 
+	// Versão melhorada da colisão para evitar loops
 	static handlePaddleBounce(ball, paddle) {
-		// Inverte a direção X
 		ball.speedX = -ball.speedX;
 
-		// Ajusta o ângulo baseado em onde a bola acertou a raquete
-		const hitPosition = (ball.y - paddle.y) / paddle.height; // 0 a 1
+		// Posição normalizada da batida (de -0.5 a 0.5)
+		const hitPosition = (ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2);
 
-		// Proposta 3: Aleatoriedade (ex: +/- 5 graus)
+		// Aleatoriedade (ex: +/- 5 graus)
 		const randomness = (Math.random() - 0.5) * (Math.PI / 36);
 
-		// Proposta 1: Ângulo máximo maior (ex: 72 graus)
+		// Ângulo máximo maior (72 graus)
 		const MAX_BOUNCE_ANGLE = Math.PI / 2.5;
-		const angle = (hitPosition - 0.5) * MAX_BOUNCE_ANGLE + randomness;
+		const angle = hitPosition * MAX_BOUNCE_ANGLE + randomness;
 
-		// Calcula as novas velocidades
+		// Calcula novas velocidades
 		const speed = Math.sqrt(ball.speedX * ball.speedX + ball.speedY * ball.speedY);
 		ball.speedX = Math.cos(angle) * speed * Math.sign(ball.speedX);
 		ball.speedY = Math.sin(angle) * speed;
 
-		// Proposta 2: Garantir velocidade Y mínima para evitar loops
-		const MIN_Y_SPEED_RATIO = 0.2; // 20% da velocidade horizontal
+		// Garantir velocidade Y mínima para evitar loops
+		const MIN_Y_SPEED_RATIO = 0.2;
 		const minSpeedY = Math.abs(ball.speedX * MIN_Y_SPEED_RATIO);
 
 		if (Math.abs(ball.speedY) < minSpeedY) {
-			// Se a bola está indo devagar, force-a a ter uma velocidade mínima
 			ball.speedY = ball.speedY >= 0 ? minSpeedY : -minSpeedY;
 		}
 
@@ -70,16 +72,14 @@ export class CollisionSystem {
 			ball.x = paddle.x - ball.radius;
 		}
 
-		// Aumenta ligeiramente a velocidade
 		ball.increaseSpeed();
 	}
 
 	static checkScore(ball, canvasWidth) {
-		// ... (código idêntico ao original)
 		if (ball.x - ball.radius <= 0) {
-			return 2;
+			return 2; // Player 2 pontua
 		} else if (ball.x + ball.radius >= canvasWidth) {
-			return 1;
+			return 1; // Player 1 pontua
 		}
 		return 0;
 	}
