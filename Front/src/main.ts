@@ -4,6 +4,22 @@ import PongGame from './PongGame.js';
 
 let currentGame: PongGame | null = null;
 
+
+const avatarImage = document.getElementById("profile-avatar-wrapper") as HTMLDivElement;
+const photoInput = document.getElementById("profile-photo-input") as HTMLInputElement;
+const avatar = document.getElementById("profile-avatar") as HTMLImageElement;
+
+avatarImage?.addEventListener("click", () => {
+	photoInput.click();
+});
+
+photoInput?.addEventListener("change", () => {
+	const file = photoInput.files?.[0];
+	if (!file) return;
+
+	avatar.src = URL.createObjectURL(file);
+});
+
 function renderDashboard(): void {
     const username = AppState.currentUser ? AppState.currentUser.username : 'Visitante';
     const usernameElement = document.getElementById('dashboard-username');
