@@ -3,6 +3,7 @@
 FRONT_DIR = Front
 
 all: install css build
+	docker compose up --build -d
 
 install:
 	@cd $(FRONT_DIR) && npm install
@@ -10,22 +11,23 @@ install:
 css:
 	@cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify
 
-css-watch:
-	@cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
+# css-watch:
+# 	@cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
 
 build:
 	@cd $(FRONT_DIR) && npx tsc
 
-dev:
-	@cd $(FRONT_DIR) && npx tsc --watch & cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
+# dev:
+# 	@cd $(FRONT_DIR) && npx tsc --watch & cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
 
-serve: css build
-	@cd $(FRONT_DIR) && npx http-server . -p 8080
+# serve: css build
+# 	@cd $(FRONT_DIR) && npx http-server . -p 8080
 
-run: css build
-	@cd $(FRONT_DIR) && npx http-server . -p 8080 -o
+# run: css build
+# 	@cd $(FRONT_DIR) && npx http-server . -p 8080 -o
 
 clean:
+	docker compose down
 	@cd $(FRONT_DIR) && rm -rf dist
 
 fclean: clean
