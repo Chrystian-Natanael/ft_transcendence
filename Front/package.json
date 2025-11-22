@@ -7,7 +7,7 @@
     "build": "tsc && npm run css",
     "css": "tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
     "css:watch": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
-    "dev": "npm run css:watch & tsc --watch",
+    "dev": "vite --host 0.0.0.0 --port $FRONT_PORT",
     "serve": "http-server . -p 8080",
     "start": "npm run build && npm run serve"
   },

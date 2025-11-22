@@ -1,0 +1,16 @@
+services:
+  frontend:
+    build:
+      context: ./Front
+      dockerfile: Dockerfile
+      args:
+        - FRONT_PORT=${FRONT_PORT}
+    volumes:
+      - ./Front:/frontend
+      - /frontend/node_modules
+    ports:
+      - "${FRONT_PORT}:${FRONT_PORT}"
+    environment:
+      - NODE_ENV=development
+
+    command: sh -c "npm run css & npm run dev"
