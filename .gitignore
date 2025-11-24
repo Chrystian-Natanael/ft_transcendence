@@ -1,0 +1,4 @@
+Front/dist/*
+Front/node_modules/*
+Back/node_modules/*
+Back/dist/*
