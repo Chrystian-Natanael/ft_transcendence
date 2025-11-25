@@ -1,16 +1,16 @@
-import { FastifyPluginAsync } from 'fastify'
+import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 import fp from 'fastify-plugin'
 import { ZodType, ZodError } from 'zod'
 
 declare module 'fastify' {
 	interface FastifyInstance {
-		validateBody: <T>(schema: ZodType<T>) => (request: any, reply: any) => Promise<void>
+		validateBody: <T>(schema: ZodType<T>) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>
 	}
 }
 
 const zodValidatorPlugin: FastifyPluginAsync = async (fastify) => {
 	fastify.decorate('validateBody', <T>(schema: ZodType<T>) => {
-		return async (request: any, reply: any) => {
+		return async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				request.body = schema.parse(request.body)
 			} catch (error) {

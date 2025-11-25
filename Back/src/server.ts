@@ -1,10 +1,10 @@
-import fastify from 'fastify'
 import cors from '@fastify/cors'
-import dotenv from 'dotenv'
 import jwt from '@fastify/jwt'
+import dotenv from 'dotenv'
+import fastify, { FastifyReply, FastifyRequest } from 'fastify'
 
-import { authRoutes } from './routes/auth.routes'
 import zodValidator from './plugins/zod-validator'
+import { authRoutes } from './routes/auth.routes'
 
 dotenv.config()
 
@@ -18,10 +18,10 @@ app.register(jwt, {
 	secret: process.env.JWT_SECRET || 'JWT_SECRET'
 })
 
-app.decorate('authenticate', async function (req: any, reply: any) {
+app.decorate('authenticate', async function (req: FastifyRequest, reply: FastifyReply) {
 	try {
 		await req.jwtVerify()
-	} catch (err) {
+	} catch {
 		return (reply.code(401).send({ error: 'Token Inválido' }))
 	}
 })

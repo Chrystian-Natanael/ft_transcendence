@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest } from 'fastify'
 import bcrypt from 'bcrypt'
 import {
 	registerSchema,
@@ -7,7 +7,7 @@ import {
 	RegisterInput,
 	LoginInput,
 	AnonymousInput
-} from "../schemas/auth.schemas";
+} from '../schemas/auth.schemas'
 
 interface User {
 	id: number;
@@ -20,8 +20,8 @@ interface User {
 	gang: 'batatas' | 'maças'
 }
 
-const ANONYMOUS_INACTIVITY_TIMEOUT	= 5 * 60 * 1000;	// 5 minutos de inatividade
-const CLEANUP_INTERVAL				= 1 * 60 * 1000;	// A cada 1 minuto
+const ANONYMOUS_INACTIVITY_TIMEOUT	= 5 * 60 * 1000	// 5 minutos de inatividade
+const CLEANUP_INTERVAL				= 1 * 60 * 1000	// A cada 1 minuto
 
 const	users: User[] = []
 let		nextId = 1
@@ -166,7 +166,7 @@ export async function authRoutes(app: FastifyInstance) {
 
 	app.get('/me', {
 		onRequest: [app.authenticate]
-	}, async (req: any, reply) => {
+	}, async (req: FastifyRequest, reply) => {
 		const user = users.find(u => u.id === req.user.id)
 		if (!user) {
 			return (reply.code(404).send({ error: 'Usuário não encontrado' }))
@@ -179,7 +179,7 @@ export async function authRoutes(app: FastifyInstance) {
 
 	app.post('/logout', {
 		onRequest: [app.authenticate]
-	}, async (req: any, reply) => {
+	}, async (req: FastifyRequest, reply) => {
 		const userId = req.user.id
 		const userIndex = users.findIndex(u => u.id === userId)
 

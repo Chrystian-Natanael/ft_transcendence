@@ -1,0 +1,18 @@
+{
+	"eslint.validate": [
+		"typescript"
+	],
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit",
+		"source.organizeImports": "explicit"
+	},
+	"eslint.workingDirectories": [
+		"./Back"
+	],
+	"files.autoSave": "afterDelay",
+	"files.autoSaveDelay": 1000,
+	"[typescript]": {
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint",
+		"editor.formatOnSave": true
+	}
+}
