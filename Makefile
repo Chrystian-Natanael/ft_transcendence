@@ -14,8 +14,11 @@ css:
 # css-watch:
 # 	@cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
 
+dev-local: build
+	@cd $(FRONT_DIR) && npm run css && FRONT_PORT=8080 npm run dev
+
 build:
-	@cd $(FRONT_DIR) && npx tsc
+	@cd $(FRONT_DIR) && npm i && npm run build
 
 # dev:
 # 	@cd $(FRONT_DIR) && npx tsc --watch & cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
