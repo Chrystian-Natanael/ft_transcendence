@@ -1,6 +1,6 @@
+import PongGame from './PongGame.js';
 import { navigateTo } from './router.js';
 import AppState, { Match } from './state.js';
-import PongGame from './PongGame.js';
 
 let currentGame: PongGame | null = null;
 
@@ -133,17 +133,159 @@ function handleGameOver(winnerName: string, score: { p1: number; p2: number }): 
     navigateTo('/dashboard');
 }
 
+async function handleAnonymousLogin(): Promise<void> {
+    const guestNameInput = document.getElementById('guest-name-input') as HTMLInputElement;
+    const nick = guestNameInput?.value?.trim();
+
+    if (!nick) {
+        // Colocar vermelho
+        return ;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3333/auth/anonymous', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ nick }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || 'Erro ao criar conta anônima');
+            // Colocar vermelho
+            return ;
+        }
+
+        localStorage.setItem('token', data.token);
+        AppState.currentUser = { username: data.user.nick };
+
+        navigateTo('/dashboard');
+
+    } catch (error) {
+        console.error('Erro ao fazer login anônimo:', error);
+    }
+
+}
+
+
+async function handleRegister(): Promise<void> {
+    const NameInput = document.getElementById('register-name-input') as HTMLInputElement;
+    const NickInput = document.getElementById('register-login-input') as HTMLInputElement;
+    const EmailInput = document.getElementById('register-email-input') as HTMLInputElement;
+    const PasswordInput = document.getElementById('register-password-input') as HTMLInputElement;
+    const GangInput = document.getElementById('register-gang-select') as HTMLInputElement;
+
+    const name = NameInput?.value?.trim();
+    const nick = NickInput?.value?.trim();
+    const email = EmailInput?.value?.trim();
+    const password = PasswordInput?.value;
+    const gang = GangInput?.value;
+
+    if (!nick || !name || !email || !password || !gang) {
+        // Colocar vermelho
+        return ;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3333/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                "name": name,
+                "nick": nick,
+                "email": email,
+                "password": password,
+                "gang": gang
+             }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || 'Erro ao criar conta');
+            // Colocar vermelho
+            return ;
+        }
+
+        navigateTo('/');
+
+    } catch (error) {
+        console.error('Erro ao criar a conta:', error);
+    }
+
+}
+
+
+async function handleLogin(): Promise<void> {
+    const IdentifierInput = document.getElementById('login-username-input') as HTMLInputElement;
+    const PasswordInput = document.getElementById('login-password-input') as HTMLInputElement;
+   
+
+    const identifier = IdentifierInput?.value?.trim();
+    const password = PasswordInput?.value;
+
+
+    console.log("Deu ruim");
+    if (!identifier || !password) {
+        // Colocar vermelho
+        return ;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3333/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                "identifier": identifier,
+                "password": password,
+             }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || 'Erro ao tentar entrar na conta');
+            // Colocar vermelho
+            return ;
+        }
+
+        localStorage.setItem('token', data.token);
+        AppState.currentUser = { username: data.user.nick };
+
+        navigateTo('/dashboard');
+
+    } catch (error) {
+        console.error('Erro ao tentar entrar na conta:', error);
+    }
+
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const loginGuestButton = document.getElementById('loginGuestButton');
     const playGameButton = document.getElementById('playGameButton');
     const quitGameButton = document.getElementById('quitGameButton');
     const backToDashboardButton = document.getElementById('backToDashboardButton');
+    const registerButton = document.getElementById('registerSubmitButton');
+    const loginButton = document.getElementById('loginButton');
+
+    if (loginButton){
+        loginButton?.addEventListener('click', handleLogin);
+    }
+
+    if (registerButton) {
+        registerButton.addEventListener('click', handleRegister);
+    }
 
     if (loginGuestButton) {
-        loginGuestButton.addEventListener('click', () => {
-            AppState.currentUser = { username: 'Visitante' };
-            navigateTo('/dashboard');
-        });
+        loginGuestButton.addEventListener('click', handleAnonymousLogin);
     }
 
     if (playGameButton) {

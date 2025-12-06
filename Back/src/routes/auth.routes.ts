@@ -41,7 +41,7 @@ interface User {
 	password?: string;
 	isAnonymous: boolean;
 	lastActivity?: number;
-	gang: 'batatas' | 'maças'
+	gang: 'batatas' | 'tomates'
 	twoFactorEnabled?: boolean;
 	twoFactorSecret?: string;
 	backupCodes?: string[];
@@ -133,7 +133,6 @@ export async function authRoutes(app: FastifyInstance) {
 		}
 	})
 
-	// Middleware que APENAS aceita tokens temporários
 	app.decorate('authenticate2FA', async function (req: FastifyRequest, reply: FastifyReply) {
 		try {
 			await req.jwtVerify()
@@ -169,6 +168,8 @@ export async function authRoutes(app: FastifyInstance) {
 			gang: gang
 		}
 		users.push(user)
+
+		console.log(`${name} se cadastrou`)
 
 		return (sanitize(user))
 	})
@@ -284,6 +285,8 @@ export async function authRoutes(app: FastifyInstance) {
 			isAnonymous: true,
 			gang: 'batatas'
 		}, { expiresIn: '2h'})
+
+		console.log(`Anonimo ${nick} entrou`);
 
 		return ( {token, user: sanitize(user)} )
 	})

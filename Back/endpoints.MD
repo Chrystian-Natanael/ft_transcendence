@@ -62,7 +62,7 @@ Authorization: Bearer <token>
 
 O sistema possui duas gangues:
 - **batatas** 🥔 - Gangue padrão para usuários anônimos
-- **maças** 🍎 - Disponível apenas para usuários registrados
+- **tomates** 🍎 - Disponível apenas para usuários registrados
 
 ### Regras
 - Usuários **registrados** escolhem sua gangue no momento do registro

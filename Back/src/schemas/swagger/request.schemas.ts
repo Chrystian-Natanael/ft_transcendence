@@ -30,7 +30,7 @@ export const registerBodySchema = {
 		},
 		gang: {
 			type: 'string',
-			enum: ['batatas', 'maças'],
+			enum: ['batatas', 'tomates'],
 			description: 'Gangue do usuário',
 			examples: ['batatas']
 		}
