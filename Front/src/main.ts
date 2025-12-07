@@ -160,7 +160,7 @@ async function handleAnonymousLogin(): Promise<void> {
         }
 
         localStorage.setItem('token', data.token);
-        AppState.currentUser = { username: data.user.nick };
+        AppState.currentUser = { username: data.user.nick, gang: data.user.gang };
 
         navigateTo('/dashboard');
 
@@ -257,7 +257,7 @@ async function handleLogin(): Promise<void> {
         }
 
         localStorage.setItem('token', data.token);
-        AppState.currentUser = { username: data.user.nick };
+        AppState.currentUser = { username: data.user.nick, gang: data.user.gang };
 
         navigateTo('/dashboard');
 

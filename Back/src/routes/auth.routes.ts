@@ -274,7 +274,7 @@ export async function authRoutes(app: FastifyInstance) {
 			email: `anonymous_${nextId}@local`,
 			isAnonymous: true,
 			lastActivity: Date.now(),
-			gang: 'batatas'
+			gang: Math.random() > 0.5 ? 'batatas' : 'tomates'
 		}
 		users.push(user)
 
@@ -283,7 +283,7 @@ export async function authRoutes(app: FastifyInstance) {
 			email: user.email,
 			nick: user.nick,
 			isAnonymous: true,
-			gang: 'batatas'
+			gang: user.gang,
 		}, { expiresIn: '2h'})
 
 		console.log(`Anonimo ${nick} entrou`);

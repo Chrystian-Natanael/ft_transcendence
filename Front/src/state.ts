@@ -1,5 +1,6 @@
 interface User {
     username: string;
+    gang: 'batatas' | 'tomates';
 }
 
 interface Match {

@@ -53,3 +53,26 @@
 }
 
 
+#left-background-image {
+    /* Define o fundo: substitua 'url-da-sua-imagem-esquerda' */
+    background-image: url('https://placehold.co/300x300/png');
+    background-size: cover; /* Ajusta o tamanho da imagem */
+    background-position: center; /* Centraliza a imagem no elemento */
+    background-repeat: no-repeat;
+    
+    /* Aplica a máscara circular (o círculo vermelho da sua foto) */
+    mask-image: radial-gradient(circle at center, black 60%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 60%, transparent 80%);
+}
+
+#right-background-image {
+    /* Define o fundo: substitua 'url-da-sua-imagem-direita' */
+    background-image: url('https://placehold.co/300x300/png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    
+    /* Aplica a máscara circular (o círculo amarelo da sua foto) */
+    mask-image: radial-gradient(circle at center, black 60%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 60%, transparent 80%);
+}
