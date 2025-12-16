@@ -133,6 +133,7 @@ export function getRankingHtml() {
 
 	// Background customizável por gangue
 	const backgroundImage = backgroundByGang[gang];
+	const avatarSrc = gang === "potatoes" ? "src/assets/perfil-batata.png" : "src/assets/perfil-tomate.png";
 
 	return `
 		<style>
@@ -181,7 +182,7 @@ export function getRankingHtml() {
 			<div class="w-full mb-8 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-cyan-500/30 rounded-xl p-4 shadow-[0_0_20px_rgba(6,182,212,0.15)] flex items-center justify-between">
 				<div class="flex items-center gap-4">
 					<div class="w-14 h-14 rounded-full border-2 ${userBorderColor} ${userShadowColor} overflow-hidden">
-						 <img src="${avatar}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${nick}&background=random'"/>
+						 <img src="${avatarSrc}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${nick}&background=random'"/>
 					</div>
 					<div>
 						<p class="text-cyan-400 text-xs font-bold uppercase tracking-wider">Seu Desempenho</p>
