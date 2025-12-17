@@ -9,19 +9,49 @@ interface FriendResponsePayload {
 	action: 'accept' | 'decline';
 }
 
+interface UserResponse {
+	id: number;
+	name: string;
+	nick: string;
+	email?: string;
+	isAnonymous: boolean;
+	gang: 'potatoes' | 'tomatoes';
+}
+
+interface FriendsListResponse {
+	id: number;
+	name: string;
+	nick: string;
+	email?: string;
+	isAnonymous: boolean;
+	gang: 'potatoes' | 'tomatoes';
+}
+
+interface FriendRequestResponse {
+	message: string;
+}
+
+interface FriendResponseResponse {
+	message: string;
+}
+
+interface RemoveFriendResponse {
+	message: string;
+}
+
 export const friendsService = {
-	listFriends: () =>
-		api.get("/friends/list"),
+	listFriends: (): Promise<FriendsListResponse[]> =>
+		api.get<FriendsListResponse[]>("/friends/list"),
 
-	getUserById: (id: string | number) =>
-		api.get(`/friends/users/${id}`),
+	getUserById: (id: string | number): Promise<UserResponse> =>
+		api.get<UserResponse>(`/friends/users/${id}`),
 
-	sendFriendRequest: (data: FriendRequestPayload) =>
-		api.post("/friends/request", data),
+	sendFriendRequest: (data: FriendRequestPayload): Promise<FriendRequestResponse> =>
+		api.post<FriendRequestResponse>("/friends/request", data),
 
-	respondFriendRequest: (data: FriendResponsePayload) =>
-		api.post("/friends/response", data),
+	respondFriendRequest: (data: FriendResponsePayload): Promise<FriendResponseResponse> =>
+		api.post<FriendResponseResponse>("/friends/response", data),
 
-	removeFriend: (id: string | number) =>
-		api.delete(`/friends/remove/${id}`),
+	removeFriend: (id: string | number): Promise<RemoveFriendResponse> =>
+		api.delete<RemoveFriendResponse>(`/friends/remove/${id}`),
 };
