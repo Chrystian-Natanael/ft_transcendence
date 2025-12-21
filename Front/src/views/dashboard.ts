@@ -72,6 +72,14 @@ export function getDashboardHtml() {
 					colorTheme: "yellow"
 				})}
 
+				${DashboardItem({
+					id: "btn-dashboard-2FA",
+					title: "2FA",
+					subtitle: "Autenticação de dois fatores",
+					icon: "🔒",
+					colorTheme: "red"
+				})}
+
 			</div>
 		</div>
 	`;

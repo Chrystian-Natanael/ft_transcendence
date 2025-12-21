@@ -5,7 +5,7 @@ interface DashItensProps {
 	title: string;
 	subtitle: string;
 	icon: string;
-	colorTheme?: "purple" | "indigo" | "green" | "blue" | "gray" | "yellow";
+	colorTheme?: "purple" | "indigo" | "green" | "blue" | "gray" | "yellow" | "red";
 }
 
 const themes = {
@@ -15,6 +15,7 @@ const themes = {
 	blue:	"border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]",
 	gray:	"border-slate-500 text-slate-400 hover:bg-slate-500/10",
 	yellow:	"border-yellow-500 text-yellow-400 hover:bg-yellow-500/10 hover:shadow-[0_0_20px_rgba(234,179,8,0.2)]",
+	red:	"border-red-500 text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]",
 };
 
 export function DashboardItem({id, title, subtitle, icon, colorTheme= "gray"}:DashItensProps) {

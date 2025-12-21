@@ -1,14 +1,14 @@
-import { api } from './services/api';
 import './style.css';
 import { showModal } from './utils/modalManager';
 import { getDashboardHtml } from './views/dashboard';
 import { getFriendsHtml } from './views/friends';
 import { getRankingHtml } from './views/ranking';
+import { get2FAHtml } from './views/twofa';
 
+import { authService } from './services/authRoutes';
 import { getLoginHtml } from './views/login';
 import { getProfileHtml } from './views/profile';
 import { getRegisterHtml, updateRegisterBg } from './views/register';
-import { authService } from './services/authRoutes';
 
 type Route = 'login' | 'register' | '2fa' | 'dashboard' | 'game' | 'profile' | 'friends' | 'leaderboard';
 
@@ -22,6 +22,7 @@ export interface User {
 	rank: number;
 	isOnline: boolean;
 	gang: 'potatoes' | 'tomatoes'
+	has2FA: boolean;
 }
 
 interface State {
@@ -46,12 +47,12 @@ function navigateTo(route: Route, addToHistory = true) {
 		}
 	}
 
-	// if (route === 'login' || route === 'register' || route === '2fa') {
-	// 	if (state.isAuthenticated) {
-	// 		navigateTo('dashboard', false);
-	// 		return ;
-	// 	}
-	// }
+	if (route === 'login' || route === 'register') {
+		if (state.isAuthenticated) {
+			navigateTo('dashboard', false);
+			return ;
+		}
+	}
 
 	if (addToHistory) {
 		history.pushState({ route }, '', `#${route}`);
@@ -84,10 +85,22 @@ function renderView(route: Route) {
 			setupRegisterEvents();
 			break;
 
-// 		case '2fa':
-// 			app.innerHTML = get2faHtml();
-// 			setup2faEvents();
-// 			break;
+		case '2fa':
+			app.innerHTML = get2FAHtml({
+				qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/demo',
+				secret: 'ABCD-EFGH-IJKL'
+			});
+			setup2faEvents();
+			break;
+
+/* 		case '2fa':
+			if (!state.isAuthenticated) {
+				navigateTo('login', false);
+				return;
+			}
+			app.innerHTML = get2FAHtml();
+			setup2faEvents();
+			break; */
 
 		case 'dashboard':
 			app.innerHTML = getDashboardHtml();
@@ -197,7 +210,8 @@ function setupLoginEvents() {
 					// Puxar dados do back end
 					isOnline: true,
 					score: 0,
-					rank: 0
+					rank: 0,
+					has2FA: true
 				};
 
 				localStorage.setItem('appState', JSON.stringify(state));
@@ -311,7 +325,54 @@ export function setupRegisterEvents() {
 }
 
 function setup2faEvents() {
+	document.getElementById('btn-2fa-copy')?.addEventListener('click', () => {
+		const secret = (document.getElementById('input-2fa-secret') as HTMLInputElement).value;
+		navigator.clipboard.writeText(secret);
+	});
 
+	document.getElementById('btn-2fa-send')?.addEventListener('click', async () => {
+		const tokenInput = document.getElementById('input-2fa-code') as HTMLInputElement;
+		const token = tokenInput.value.replace(/\s/g, '');
+
+		if (token.length !== 6) {
+			showModal({
+				title: "Código inválido",
+				message: "O código deve conter exatamente 6 dígitos.",
+				type: "danger",
+				confirmText: "Corrigir"
+			});
+			return;
+		}
+
+		try {
+			// 🔐 Chamada real do backend (exemplo)
+			// await authService.enable2FA({ token });
+
+			// ✅ Sucesso
+			showModal({
+				title: "2FA Ativado",
+				message: "A autenticação em dois fatores foi ativada com sucesso.",
+				type: "success",
+				confirmText: "Voltar ao Dashboard",
+				onConfirm: () => {
+					navigateTo('dashboard');
+				}
+			});
+
+		} catch (error) {
+			// ❌ Erro
+			showModal({
+				title: "Falha ao ativar 2FA",
+				message: "Não foi possível validar o código. Verifique o token e tente novamente.",
+				type: "danger",
+				confirmText: "Tentar novamente"
+			});
+		}
+	});
+
+	document.getElementById('btn-2fa-back')?.addEventListener('click', () => {
+		navigateTo('dashboard');
+	});
 }
 
 function setupDashboardEvents() {
@@ -351,6 +412,25 @@ function setupDashboardEvents() {
 
 		document.getElementById('btn-dashboard-leaderboard')?.addEventListener('click', () => {
 		navigateTo('leaderboard');
+	})
+
+		document.getElementById('btn-dashboard-2FA')?.addEventListener('click', () => {
+
+			const has2FA = state.user?.has2FA ?? false;
+
+			// 🔐 2FA já ativado → apenas informa
+			if (has2FA) {
+				showModal({
+					title: "2FA já configurado",
+					message: "A autenticação em duas etapas já está ativa nesta conta. Sua segurança está reforçada.",
+					type: "success",
+					confirmText: "Entendi"
+				});
+				return;
+			}
+		
+			// 🔓 2FA desativado → vai para setup
+			navigateTo('2fa');
 	})
 }
 
