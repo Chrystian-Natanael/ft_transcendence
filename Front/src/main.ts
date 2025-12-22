@@ -10,8 +10,9 @@ import { getLoginHtml } from './views/login';
 import { getProfileHtml } from './views/profile';
 import { getRegisterHtml, updateRegisterBg } from './views/register';
 import { getSettingsHtml } from './views/settings';
+import { get2FADisableHtml } from './views/twofaDisable';
 
-type Route = 'login' | 'register' | '2fa' | 'dashboard' | 'game' | 'profile' | 'friends' | 'leaderboard' | 'settings';
+type Route = 'login' | 'register' | '2fa' | '2fa-disable' | 'dashboard' | 'game' | 'profile' | 'friends' | 'leaderboard' | 'settings';
 
 export interface User {
 	id: number;
@@ -91,7 +92,7 @@ function renderView(route: Route) {
 				qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/demo',
 				secret: 'ABCD-EFGH-IJKL'
 			});
-			setup2faEvents();
+			setup2FAEvents();
 			break;
 
 /* 		case '2fa':
@@ -102,6 +103,11 @@ function renderView(route: Route) {
 			app.innerHTML = get2FAHtml();
 			setup2faEvents();
 			break; */
+
+		case '2fa-disable':
+			app.innerHTML = get2FADisableHtml();
+			setup2FADisableEvents();
+			break;
 
 		case 'dashboard':
 			app.innerHTML = getDashboardHtml();
@@ -340,7 +346,7 @@ export function setupRegisterEvents() {
 	document.getElementById('select-register-gang')?.addEventListener('change', updateRegisterBg);
 }
 
-function setup2faEvents() {
+function setup2FAEvents() {
 	document.getElementById('btn-2fa-copy')?.addEventListener('click', () => {
 		const secret = (document.getElementById('input-2fa-secret') as HTMLInputElement).value;
 		navigator.clipboard.writeText(secret);
@@ -388,6 +394,61 @@ function setup2faEvents() {
 
 	document.getElementById('btn-2fa-back')?.addEventListener('click', () => {
 		navigateTo('settings');
+	});
+}
+
+function setup2FADisableEvents() {
+	const confirmBtn = document.getElementById("btn-2fa-disable-confirm") as HTMLButtonElement;
+	const cancelBtn = document.getElementById("btn-2fa-disable-cancel") as HTMLButtonElement;
+
+	confirmBtn?.addEventListener("click", async () => {
+		const password = (document.getElementById("input-2fa-disable-password") as HTMLInputElement)?.value;
+		const token = (document.getElementById("input-2fa-disable-token") as HTMLInputElement)?.value;
+
+		// Validações básicas (frontend)
+		if (!password || password.length < 4) {
+			showModal({
+				title: "Senha inválida",
+				message: "Informe sua senha corretamente.",
+				type: "danger"
+			});
+			return;
+		}
+
+		if (!token || token.length !== 6) {
+			showModal({
+				title: "Código inválido",
+				message: "Informe o código de 6 dígitos do autenticador.",
+				type: "danger"
+			});
+			return;
+		}
+
+		// 🔐 Simulação de validação OK
+		// (no futuro: backend valida senha + token)
+
+		confirmBtn.disabled = true;
+		confirmBtn.textContent = "Desativando...";
+
+		// Atualiza estado
+		if (state.user) {
+			state.user.has2FA = false;
+			localStorage.setItem("appState", JSON.stringify(state));
+		}
+
+		showModal({
+			title: "2FA desativado",
+			message: "A autenticação em duas etapas foi desativada com sucesso.",
+			type: "success",
+			confirmText: "Voltar às configurações",
+			onConfirm: () => {
+				navigateTo("settings");
+			}
+		});
+	});
+
+	cancelBtn?.addEventListener("click", () => {
+		navigateTo("settings");
 	});
 }
 
@@ -505,20 +566,7 @@ function setupSettingsEvents() {
 	});
 
 	document.getElementById('btn-settings-2fa-disable')?.addEventListener('click', () => {
-		showModal({
-			title: "Desativar autenticação em duas etapas",
-			message: "Tem certeza que deseja desativar o 2FA? Isso reduzirá a segurança da sua conta.",
-			type: "danger",
-			confirmText: "Desativar",
-			cancelText: "Cancelar",
-			onConfirm: () => {
-				if (state.user) {
-					state.user.has2FA = false;
-					localStorage.setItem('appState', JSON.stringify(state));
-				}
-				navigateTo('settings');
-			}
-		});
+		navigateTo('2fa-disable');
 	});
 }
 
