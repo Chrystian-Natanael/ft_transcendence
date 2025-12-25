@@ -60,48 +60,48 @@ const CLEANUP_INTERVAL				= 1 * 60 * 1000	// A cada 1 minuto
 
 // DADOS MOCKADOS PARA TESTE - APAGAR DEPOIS
 const	users: User[] = [
-	// {
-    //     id: 1,
-    //     name: 'batata',
-    //     nick: 'batata',
-    //     email: 'batata@teste.com',
-    //     password: '$2b$10$zyn5MC8ezQtsVR/4NQD6W.fdIfSDC.997KP72mNbq2EjBt.hEnWKe',
-    //     isAnonymous: false,
-    //     gang: 'potatoes',
-    //     friends: [],
-    //     friendRequestsSent: [],
-    //     friendRequestsReceived: [],
-    //     score: 5000,
-    //     lastActivity: Date.now()
-    // },
-    // {
-    //     id: 2,
-    //     name: 'tomate',
-    //     nick: 'tomate',
-    //     email: 'tomate@teste.com',
-    //     password: '$2b$10$zyn5MC8ezQtsVR/4NQD6W.fdIfSDC.997KP72mNbq2EjBt.hEnWKe',
-    //     isAnonymous: false,
-    //     gang: 'tomatoes',
-    //     friends: [],
-    //     friendRequestsSent: [],
-    //     friendRequestsReceived: [],
-    //     score: 4500,
-    //     lastActivity: Date.now()
-    // },
-    // {
-    //     id: 3,
-    //     name: 'Dev Teste',
-    //     nick: 'dev',
-    //     email: 'dev@teste.com',
-    //     password: '$2b$10$zyn5MC8ezQtsVR/4NQD6W.fdIfSDC.997KP72mNbq2EjBt.hEnWKe',
-    //     isAnonymous: false,
-    //     gang: 'potatoes',
-    //     friends: [],
-    //     friendRequestsSent: [],
-    //     friendRequestsReceived: [],
-    //     score: 100,
-    //     lastActivity: Date.now()
-    // }
+	{
+		id: 1,
+		name: 'batata',
+		nick: 'batata',
+		email: 'batata@teste.com',
+		password: '$2b$10$zyn5MC8ezQtsVR/4NQD6W.fdIfSDC.997KP72mNbq2EjBt.hEnWKe',
+		isAnonymous: false,
+		gang: 'potatoes',
+		friends: [],
+		friendRequestsSent: [],
+		friendRequestsReceived: [],
+		score: 5000,
+		lastActivity: Date.now()
+	},
+	{
+		id: 2,
+		name: 'tomate',
+		nick: 'tomate',
+		email: 'tomate@teste.com',
+		password: '$2b$10$zyn5MC8ezQtsVR/4NQD6W.fdIfSDC.997KP72mNbq2EjBt.hEnWKe',
+		isAnonymous: false,
+		gang: 'tomatoes',
+		friends: [],
+		friendRequestsSent: [],
+		friendRequestsReceived: [],
+		score: 4500,
+		lastActivity: Date.now()
+	},
+	{
+		id: 3,
+		name: 'Dev Teste',
+		nick: 'dev',
+		email: 'dev@teste.com',
+		password: '$2b$10$zyn5MC8ezQtsVR/4NQD6W.fdIfSDC.997KP72mNbq2EjBt.hEnWKe',
+		isAnonymous: false,
+		gang: 'potatoes',
+		friends: [],
+		friendRequestsSent: [],
+		friendRequestsReceived: [],
+		score: 100,
+		lastActivity: Date.now()
+	}
 ]
 let		nextId = 4
 
@@ -130,7 +130,7 @@ function sanitizeRequestsFriends(user: User) {
 	return {
 		id: user.id,
 		nick: user.nick,
-		avatar: "src/assets/perfil-sla.png"
+		avatar: 'src/assets/perfil-sla.png'
 	}
 }
 
@@ -595,43 +595,43 @@ export async function friendsRoutes(app: FastifyInstance) {
 	})
 
 	app.get('/requests/received', {
-        onRequest: [app.authenticate],
-        preHandler: [verifyUser],
-    }, async (req: FastifyRequest, reply) => {
-        const currentUser = users.find(u => u.id === req.user.id)!
+		onRequest: [app.authenticate],
+		preHandler: [verifyUser],
+	}, async (req: FastifyRequest, reply) => {
+		const currentUser = users.find(u => u.id === req.user.id)!
 
-        const incomingRequests = users
-            .filter(u => currentUser.friendRequestsReceived.includes(u.id))
-            .map(u => sanitizeRequestsFriends(u))
+		const incomingRequests = users
+			.filter(u => currentUser.friendRequestsReceived.includes(u.id))
+			.map(u => sanitizeRequestsFriends(u))
 
-        return reply.send(incomingRequests)
-    })
+		return reply.send(incomingRequests)
+	})
 }
 
 export async function leaderboardRoutes(app: FastifyInstance) {
-    
-    app.get('/', {
-        onRequest: [app.authenticate]
-    }, async (req, reply) => {
-        
-        const leaderboardData = users.map(u => ({
-            id: u.id,
-            name: u.name,
-            nick: u.nick,
-            avatar: "src/assets/perfil-sla.png",
-            score: u.score || Math.floor(Math.random() * 10000), // Fiz um score aleatorio pra testar
-            gang: u.gang,
-            isOnline: true,
-            rank: 0
-        }));
 
-        // Ordenando score
-        leaderboardData.sort((a, b) => b.score - a.score);
+	app.get('/', {
+		onRequest: [app.authenticate]
+	}, async (req, reply) => {
 
-        leaderboardData.forEach((user, index) => {
-            user.rank = index + 1;
-        });
+		const leaderboardData = users.map(u => ({
+			id: u.id,
+			name: u.name,
+			nick: u.nick,
+			avatar: 'src/assets/perfil-sla.png',
+			score: u.score || Math.floor(Math.random() * 10000), // Fiz um score aleatorio pra testar
+			gang: u.gang,
+			isOnline: true,
+			rank: 0
+		}))
 
-        return reply.send(leaderboardData);
-    })
+		// Ordenando score
+		leaderboardData.sort((a, b) => b.score - a.score)
+
+		leaderboardData.forEach((user, index) => {
+			user.rank = index + 1
+		})
+
+		return reply.send(leaderboardData)
+	})
 }
