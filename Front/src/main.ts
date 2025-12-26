@@ -15,6 +15,8 @@ import { getProfileHtml } from './views/profile';
 import { getRegisterHtml, updateRegisterBg } from './views/register';
 import { getSettingsHtml } from './views/settings';
 import { get2FADisableHtml } from './views/twofaDisable';
+import { loginSchema, registerSchema } from './schemas/auth.schemas';
+import { clearFormErrors, displayFormErrors, validateForm } from './utils/formValidation';
 
 type Route = 'login' | 'register' | '2fa' | '2fa-disable' | 'dashboard' | 'game' | 'profile' | 'friends' | 'leaderboard' | 'settings'| 'login2fa';
 
@@ -99,12 +101,12 @@ async function renderView(route: Route) {
 
 		case 'login2fa':
 			if (!localStorage.getItem('tempToken')) {
-                navigateTo('login', false);
-                return;
-            }
-            app.innerHTML = getLogin2FAHtml();
-            setupLogin2FAEvents();
-            break;
+				navigateTo('login', false);
+				return;
+			}
+			app.innerHTML = getLogin2FAHtml();
+			setupLogin2FAEvents();
+			break;
 
 		case 'register':
 			if (state.isAuthenticated) {
@@ -239,67 +241,67 @@ window.addEventListener('hashchange', () => {
 });
 
 function setupLoginEvents() {
-	document.getElementById('btn-login-user')?.addEventListener('click', async () => {
-		const userInput = (document.getElementById('input-login-user') as HTMLInputElement).value;
-		const passInput = (document.getElementById('input-login-pass') as HTMLInputElement).value;
-
-		if (userInput && passInput) {
-			try {
-				const response = await authService.login({
-					identifier: userInput,
-					password: passInput
-				});
-
-                if (response.requires2FA && response.tempToken) {
-                    console.log("TEMP TOKEN: " + response.tempToken)
-                    localStorage.setItem('tempToken', response.tempToken);
-                    
-                    state.user = {
-						id: 0, // Placeholder
-                        name: '',
-                        nick: '',
-                        isAnonymous: false,
-                        score: 0,
-                        rank: 0,
-                        isOnline: false,
-                        has2FA: true,
-                        gang: 'potatoes' // Pega do response ou default
-                    };
-                    
-                    // 3. Navega para a tela de input do código
-                    navigateTo('login2fa');
-                    return;
-                }
-                // ---------------------------
-
-                // Fluxo normal (sem 2FA)
-                localStorage.setItem('token', response.token);
-                state.isAuthenticated = true;
-                state.user = {
-                    id: response.user.id,
-                    name: response.user.name,
-                    nick: response.user.nick,
-                    gang: response.user.gang,
-                    isAnonymous: response.user.isAnonymous,
-                    isOnline: true,
-                    score: 0,
-                    rank: 0,
-                    has2FA: response.user.has2FA
-                };
-
-                localStorage.setItem('appState', JSON.stringify(state));
-                navigateTo('dashboard');
-
-			} catch (error) {
-				showModal({
-					title: "Erro no login",
-					message: "Não foi possível realizar o login. Por favor, verifique suas credenciais e tente novamente.",
-					type: "danger",
-					confirmText: "Tentar novamente"
-				});
-			}
-		}
-	})
+// 	document.getElementById('btn-login-user')?.addEventListener('click', async () => {
+// 		const userInput = (document.getElementById('input-login-user') as HTMLInputElement).value;
+// 		const passInput = (document.getElementById('input-login-pass') as HTMLInputElement).value;
+//
+// 		if (userInput && passInput) {
+// 			try {
+// 				const response = await authService.login({
+// 					identifier: userInput,
+// 					password: passInput
+// 				});
+//
+// 				if (response.requires2FA && response.tempToken) {
+// 					console.log("TEMP TOKEN: " + response.tempToken)
+// 					localStorage.setItem('tempToken', response.tempToken);
+//
+// 					state.user = {
+// 						id: 0, // Placeholder
+// 						name: '',
+// 						nick: '',
+// 						isAnonymous: false,
+// 						score: 0,
+// 						rank: 0,
+// 						isOnline: false,
+// 						has2FA: true,
+// 						gang: 'potatoes' // Pega do response ou default
+// 					};
+//
+// 					// 3. Navega para a tela de input do código
+// 					navigateTo('login2fa');
+// 					return;
+// 				}
+// 				// ---------------------------
+//
+// 				// Fluxo normal (sem 2FA)
+// 				localStorage.setItem('token', response.token);
+// 				state.isAuthenticated = true;
+// 				state.user = {
+// 					id: response.user.id,
+// 					name: response.user.name,
+// 					nick: response.user.nick,
+// 					gang: response.user.gang,
+// 					isAnonymous: response.user.isAnonymous,
+// 					isOnline: true,
+// 					score: 0,
+// 					rank: 0,
+// 					has2FA: response.user.has2FA
+// 				};
+//
+// 				localStorage.setItem('appState', JSON.stringify(state));
+// 				navigateTo('dashboard');
+//
+// 			} catch (error) {
+// 				showModal({
+// 					title: "Erro no login",
+// 					message: "Não foi possível realizar o login. Por favor, verifique suas credenciais e tente novamente.",
+// 					type: "danger",
+// 					confirmText: "Tentar novamente"
+// 				});
+// 			}
+// 		}
+// 	})
 
 	document.getElementById('btn-login-guest')?.addEventListener('click', async () => {
 		const userAnonymous = (document.getElementById('input-login-guest') as HTMLInputElement).value;
@@ -349,46 +351,92 @@ export function setupRegisterEvents() {
 		navigateTo('login');
 	})
 
-	document.getElementById('btn-register-submit')?.addEventListener('click', async () => {
-		const name = (document.getElementById('input-register-name') as HTMLInputElement).value;
-		const nick = (document.getElementById('input-register-nick') as HTMLInputElement).value;
-		const email = (document.getElementById('input-register-email') as HTMLInputElement).value;
-		const pass = (document.getElementById('input-register-pass') as HTMLInputElement).value;
-		const gang = (document.getElementById('select-register-gang') as HTMLSelectElement).value as 'potatoes' | 'tomatoes';
+// 	document.getElementById('btn-register-submit')?.addEventListener('click', async () => {
+// 		const name = (document.getElementById('input-register-name') as HTMLInputElement).value;
+// 		const nick = (document.getElementById('input-register-nick') as HTMLInputElement).value;
+// 		const email = (document.getElementById('input-register-email') as HTMLInputElement).value;
+// 		const pass = (document.getElementById('input-register-pass') as HTMLInputElement).value;
+// 		const gang = (document.getElementById('select-register-gang') as HTMLSelectElement).value as 'potatoes' | 'tomatoes';
+//
+// 		if (name && nick && email && pass && gang) {
+// 			try {
+// 				await authService.register({
+// 					name,
+// 					nick,
+// 					email,
+// 					password: pass,
+// 					gang
+// 				});
+//
+// 				showModal({
+// 					title: "Bem-vindo!",
+// 					message: `A conta de ${name} foi criada com sucesso. Prepare-se para a batalha!`,
+// 					type: "success",
+// 					confirmText: "Ir para Login",
+// 					onConfirm: () => {
+// 						navigateTo('login');
+// 					}
+// 				});
+//
+// 			} catch (error) {
+// 				showModal({
+// 					title: "Erro no cadastro",
+// 					message: "Não foi possível criar a conta. Por favor, verifique os dados e tente novamente.",
+// 					type: "danger",
+// 					confirmText: "Tentar novamente"
+// 				});
+// 			}
+//
+// 		} else {
+// 			showModal({
+// 				title: "Erro no cadastro",
+// 				message: "Por favor, preencha todos os campos para criar sua conta.",
+// 				type: "danger",
+// 				confirmText: "Tentar novamente"
+// 			});
+// 		}
+// 	})
 
-		if (name && nick && email && pass && gang) {
-			try {
-				await authService.register({
-					name,
-					nick,
-					email,
-					password: pass,
-					gang
-				});
+	const form = document.getElementById('form-register') as HTMLFormElement;
 
-				showModal({
-					title: "Bem-vindo!",
-					message: `A conta de ${name} foi criada com sucesso. Prepare-se para a batalha!`,
-					type: "success",
-					confirmText: "Ir para Login",
-					onConfirm: () => {
-						navigateTo('login');
-					}
-				});
+	form?.addEventListener('submit', async (e) => {
+		e.preventDefault();
 
-			} catch (error) {
-				showModal({
-					title: "Erro no cadastro",
-					message: "Não foi possível criar a conta. Por favor, verifique os dados e tente novamente.",
-					type: "danger",
-					confirmText: "Tentar novamente"
-				});
-			}
+		// Coletar dados do formulário
+		const formData = {
+			name: (document.getElementById('input-register-name') as HTMLInputElement).value,
+			nick: (document.getElementById('input-register-nick') as HTMLInputElement).value,
+			email: (document.getElementById('input-register-email') as HTMLInputElement).value,
+			password: (document.getElementById('input-register-password') as HTMLInputElement).value,
+			gang: (document.getElementById('select-register-gang') as HTMLInputElement).value
+		};
 
-		} else {
+		// Validar com Zod
+		const validation = validateForm(registerSchema, formData);
+
+		if (!validation.success) {
+			displayFormErrors('form-register', validation.errors);
+			return;
+		}
+
+		// Limpar erros anteriores
+		clearFormErrors('form-register');
+
+		try {
+			await authService.register(validation.data);
+
+			showModal({
+				title: "Conta criada!",
+				message: "Sua conta foi criada com sucesso. Faça login para continuar.",
+				type: "success",
+				confirmText: "Fazer Login",
+				onConfirm: () => navigateTo('login')
+			});
+
+		} catch (error: any) {
 			showModal({
 				title: "Erro no cadastro",
-				message: "Por favor, preencha todos os campos para criar sua conta.",
+				message: error.message || "Não foi possível criar a conta.",
 				type: "danger",
 				confirmText: "Tentar novamente"
 			});
@@ -401,165 +449,165 @@ export function setupRegisterEvents() {
 
 
 function showCopyToast() {
-    const toast = document.createElement('div');
-    toast.innerText = "Copiado!";
-    
-    toast.className = `
-        fixed bottom-10 left-1/2 -translate-x-1/2
-        bg-emerald-600 text-white text-xs font-bold
-        px-4 py-2 rounded-full shadow-lg
-        transform transition-all duration-300 ease-out
-        translate-y-2 opacity-0
-        z-50
-    `;
+	const toast = document.createElement('div');
+	toast.innerText = "Copiado!";
 
-    document.body.appendChild(toast);
+	toast.className = `
+		fixed bottom-10 left-1/2 -translate-x-1/2
+		bg-emerald-600 text-white text-xs font-bold
+		px-4 py-2 rounded-full shadow-lg
+		transform transition-all duration-300 ease-out
+		translate-y-2 opacity-0
+		z-50
+	`;
 
-    requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-    });
+	document.body.appendChild(toast);
 
-    setTimeout(() => {
-        toast.classList.add('translate-y-2', 'opacity-0'); // Animação de saída
-        setTimeout(() => {
-            toast.remove();
-        }, 300);
-    }, 2000);
+	requestAnimationFrame(() => {
+		toast.classList.remove('translate-y-2', 'opacity-0');
+	});
+
+	setTimeout(() => {
+		toast.classList.add('translate-y-2', 'opacity-0'); // Animação de saída
+		setTimeout(() => {
+			toast.remove();
+		}, 300);
+	}, 2000);
 }
 
 function formatBackupCodesHtml(codes: string[]): string {
-    if (!codes || codes.length === 0) return "Nenhum código gerado.";
+	if (!codes || codes.length === 0) return "Nenhum código gerado.";
 
-    // Gera os itens da grade (número + código)
-    const gridItemsHtml = codes.map((code, index) => `
-        <div class="flex items-center space-x-2 p-1">
-            <span class="text-gray-500 font-mono select-none text-xs">${index + 1}.</span>
-            <span class="font-mono text-white tracking-wider text-sm">${code}</span>
-        </div>
-    `).join('');
+	// Gera os itens da grade (número + código)
+	const gridItemsHtml = codes.map((code, index) => `
+		<div class="flex items-center space-x-2 p-1">
+			<span class="text-gray-500 font-mono select-none text-xs">${index + 1}.</span>
+			<span class="font-mono text-white tracking-wider text-sm">${code}</span>
+		</div>
+	`).join('');
 
-    const rawCodesString = codes.join('\n');
+	const rawCodesString = codes.join('\n');
 
-    return `
-        <p class="mb-4 text-sm text-gray-300 text-center">
-            Guarde estes códigos em um local seguro. Você precisará deles para acessar sua conta se perder seu dispositivo 2FA.
-        </p>
-        
-        <div 
-            id="backup-codes-container"
-            data-codes="${encodeURIComponent(rawCodesString)}"
-            class="bg-slate-950/60 p-4 rounded-lg border border-white/10 mb-5 text-left shadow-inner overflow-hidden relative group"
-        >
-            <div class="grid grid-cols-2 gap-x-4 gap-y-2 relative z-10">
-                ${gridItemsHtml}
-            </div>
-            <div class="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-        </div>
+	return `
+		<p class="mb-4 text-sm text-gray-300 text-center">
+			Guarde estes códigos em um local seguro. Você precisará deles para acessar sua conta se perder seu dispositivo 2FA.
+		</p>
 
-        <div class="flex justify-center mb-6">
-            <button
-                id="btn-copy-backup-codes"
-                class="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white text-xs font-bold px-4 py-2 rounded border border-white/10 transition-all duration-200 active:scale-[0.98]"
-            >
-                <span class="text-sm">📋</span> <span id="btn-copy-backup-text">Copiar Todos</span>
-            </button>
-        </div>
-    `;
+		<div
+			id="backup-codes-container"
+			data-codes="${encodeURIComponent(rawCodesString)}"
+			class="bg-slate-950/60 p-4 rounded-lg border border-white/10 mb-5 text-left shadow-inner overflow-hidden relative group"
+		>
+			<div class="grid grid-cols-2 gap-x-4 gap-y-2 relative z-10">
+				${gridItemsHtml}
+			</div>
+			<div class="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+		</div>
+
+		<div class="flex justify-center mb-6">
+			<button
+				id="btn-copy-backup-codes"
+				class="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white text-xs font-bold px-4 py-2 rounded border border-white/10 transition-all duration-200 active:scale-[0.98]"
+			>
+				<span class="text-sm">📋</span> <span id="btn-copy-backup-text">Copiar Todos</span>
+			</button>
+		</div>
+	`;
 }
 
 function setup2FAEvents() {
-    document.getElementById('btn-2fa-copy')?.addEventListener('click', () => {
-    const secretInput = document.getElementById('input-2fa-secret') as HTMLInputElement;
-    const secret = secretInput.value;
-    
-    navigator.clipboard.writeText(secret).then(() => {
-        showCopyToast();
-        
-        const btn = document.getElementById('btn-2fa-copy');
-        if (btn) {
-            const originalText = btn.innerHTML;
-            btn.innerHTML = "✅";
-            setTimeout(() => btn.innerHTML = originalText, 2000);
-        }
-    }).catch(err => {
-        console.error('Falha ao copiar:', err);
-    });
+	document.getElementById('btn-2fa-copy')?.addEventListener('click', () => {
+	const secretInput = document.getElementById('input-2fa-secret') as HTMLInputElement;
+	const secret = secretInput.value;
+
+	navigator.clipboard.writeText(secret).then(() => {
+		showCopyToast();
+
+		const btn = document.getElementById('btn-2fa-copy');
+		if (btn) {
+			const originalText = btn.innerHTML;
+			btn.innerHTML = "✅";
+			setTimeout(() => btn.innerHTML = originalText, 2000);
+		}
+	}).catch(err => {
+		console.error('Falha ao copiar:', err);
+	});
 });
 
-    document.getElementById('btn-2fa-back')?.addEventListener('click', () => {
-        navigateTo('settings');
-    });
+	document.getElementById('btn-2fa-back')?.addEventListener('click', () => {
+		navigateTo('settings');
+	});
 
-    document.getElementById('btn-2fa-send')?.addEventListener('click', async () => {
-        const tokenInput = document.getElementById('input-2fa-code') as HTMLInputElement;
-        const tokenValue = tokenInput.value.replace(/\s/g, '');
-        const secretCode = (document.getElementById('input-2fa-secret') as HTMLInputElement).value;
+	document.getElementById('btn-2fa-send')?.addEventListener('click', async () => {
+		const tokenInput = document.getElementById('input-2fa-code') as HTMLInputElement;
+		const tokenValue = tokenInput.value.replace(/\s/g, '');
+		const secretCode = (document.getElementById('input-2fa-secret') as HTMLInputElement).value;
 
-        if (tokenValue.length !== 6) {
-            showModal({
-                title: "Código inválido",
-                message: "O código deve conter exatamente 6 dígitos.",
-                type: "danger",
-                confirmText: "Corrigir"
-            });
-            return;
-        }
+		if (tokenValue.length !== 6) {
+			showModal({
+				title: "Código inválido",
+				message: "O código deve conter exatamente 6 dígitos.",
+				type: "danger",
+				confirmText: "Corrigir"
+			});
+			return;
+		}
 
-        try {
-            const response = await authService.enable2FA({
-                token: tokenValue,
-                secret: secretCode,
-            });
-        
-            if (response.message === '2FA habilitado com sucesso') {
-                if (state.user) {
-                    state.user.has2FA = true;
-                }
+		try {
+			const response = await authService.enable2FA({
+				token: tokenValue,
+				secret: secretCode,
+			});
 
-                const backupCodesHtml = formatBackupCodesHtml(response.backupCodes);
+			if (response.message === '2FA habilitado com sucesso') {
+				if (state.user) {
+					state.user.has2FA = true;
+				}
 
-                showModal({
-                    title: "2FA Habilitado!",
-                    message: backupCodesHtml,
-                    type: "success",
-                    confirmText: "OK, já salvei",
-                    onConfirm: () => {
-                         navigateTo("settings");
-                    }
-                });
+				const backupCodesHtml = formatBackupCodesHtml(response.backupCodes);
 
-                const copyBtn = document.getElementById('btn-copy-backup-codes');
-                const container = document.getElementById('backup-codes-container');
-                const copyTextSpan = document.getElementById('btn-copy-backup-text');
+				showModal({
+					title: "2FA Habilitado!",
+					message: backupCodesHtml,
+					type: "success",
+					confirmText: "OK, já salvei",
+					onConfirm: () => {
+						 navigateTo("settings");
+					}
+				});
 
-                if (copyBtn && container && copyTextSpan) {
-                    copyBtn.addEventListener('click', () => {
-                        const rawCodes = decodeURIComponent(container.getAttribute('data-codes') || '');
-                        
-                        navigator.clipboard.writeText(rawCodes).then(() => {
-                            const originalText = copyTextSpan.innerText;
-                            copyTextSpan.innerText = "Códigos Copiados! ✅";
-                            copyBtn.classList.add('bg-emerald-900/50', '!text-emerald-200', '!border-emerald-500/50');
-                            
-                            setTimeout(() => {
-                                copyTextSpan.innerText = originalText;
-                                copyBtn.classList.remove('bg-emerald-900/50', '!text-emerald-200', '!border-emerald-500/50');
-                            }, 2500);
-                        }).catch(err => console.error('Erro ao copiar códigos de backup', err));
-                    });
-                }
-            }
+				const copyBtn = document.getElementById('btn-copy-backup-codes');
+				const container = document.getElementById('backup-codes-container');
+				const copyTextSpan = document.getElementById('btn-copy-backup-text');
 
-        } catch (error : any) {
-            showModal({
-                title: "Falha ao ativar 2FA",
-                message: error.message || "Não foi possível validar o código",
-                type: "danger",
-                confirmText: "Tentar novamente",
-            });
-            return;
-        }
-    });
+				if (copyBtn && container && copyTextSpan) {
+					copyBtn.addEventListener('click', () => {
+						const rawCodes = decodeURIComponent(container.getAttribute('data-codes') || '');
+
+						navigator.clipboard.writeText(rawCodes).then(() => {
+							const originalText = copyTextSpan.innerText;
+							copyTextSpan.innerText = "Códigos Copiados! ✅";
+							copyBtn.classList.add('bg-emerald-900/50', '!text-emerald-200', '!border-emerald-500/50');
+
+							setTimeout(() => {
+								copyTextSpan.innerText = originalText;
+								copyBtn.classList.remove('bg-emerald-900/50', '!text-emerald-200', '!border-emerald-500/50');
+							}, 2500);
+						}).catch(err => console.error('Erro ao copiar códigos de backup', err));
+					});
+				}
+			}
+
+		} catch (error : any) {
+			showModal({
+				title: "Falha ao ativar 2FA",
+				message: error.message || "Não foi possível validar o código",
+				type: "danger",
+				confirmText: "Tentar novamente",
+			});
+			return;
+		}
+	});
 }
 
 function setup2FADisableEvents() {
@@ -584,7 +632,7 @@ function setup2FADisableEvents() {
 			const response = await authService.disable2FA({
 				token: tokenValue,
 			});
-		
+
 		if (response.message === '2FA desabilitado com sucesso') {
 
 			if (state.user) {
@@ -600,7 +648,7 @@ function setup2FADisableEvents() {
 			});
 
 			navigateTo("settings")
-			
+
 		}
 
 		} catch (error : any) {
@@ -611,7 +659,7 @@ function setup2FADisableEvents() {
 				confirmText: "Tentar novamente",
 			});
 			return ;
-			
+
 		}
 	});
 
@@ -759,98 +807,98 @@ function setupFriendsEvents() {
 				});
 			} catch (e: any) {
 				console.error('Erro capturado:', e);
-                const errorMessage = e.message || e.response?.data?.error || `Não foi possível convidar ${nick}`;
+				const errorMessage = e.message || e.response?.data?.error || `Não foi possível convidar ${nick}`;
 
-                showModal({
-                    title: "Erro no pedido",
-                    message: errorMessage,
-                    type: "danger",
-                    confirmText: "Tentar novamente"
-                });
-            }
+				showModal({
+					title: "Erro no pedido",
+					message: errorMessage,
+					type: "danger",
+					confirmText: "Tentar novamente"
+				});
+			}
 		}
 	})
 
 	const requestsContainer = document.querySelector('.overflow-y-auto'); // Ajuste o seletor para o container das solicitações
 	document.addEventListener('click', async (e) => {
-        const target = e.target as HTMLElement;
-        const btn = target.closest('.btn-request-action') as HTMLElement;
+		const target = e.target as HTMLElement;
+		const btn = target.closest('.btn-request-action') as HTMLElement;
 
-        if (btn) {
-            const nick = btn.getAttribute('data-nick');
-            const action = btn.getAttribute('data-action') as 'accept' | 'decline';
-            const id = btn.getAttribute('data-id');
+		if (btn) {
+			const nick = btn.getAttribute('data-nick');
+			const action = btn.getAttribute('data-action') as 'accept' | 'decline';
+			const id = btn.getAttribute('data-id');
 
-            if (!nick || !action) return;
+			if (!nick || !action) return;
 
-            try {
-                const response = await friendsService.respondFriendRequest({
-                    nick: nick,
-                    action: action
-                });
+			try {
+				const response = await friendsService.respondFriendRequest({
+					nick: nick,
+					action: action
+				});
 
-                showModal({
-                    title: action === 'accept' ? "Sucesso!" : "Recusado",
-                    message: response.message,
-                    type: "success",
-                    confirmText: "OK",
-                    onConfirm: () => {
-                        navigateTo('friends', false);
-                    }
-                });
-            } catch (error: any) {
-                showModal({
-                    title: "Erro",
-                    message: error.message || "Não foi possível processar a solicitação",
-                    type: "danger",
-                    confirmText: "Tentar novamente"
-                });
-            }
-        }
-    });
+				showModal({
+					title: action === 'accept' ? "Sucesso!" : "Recusado",
+					message: response.message,
+					type: "success",
+					confirmText: "OK",
+					onConfirm: () => {
+						navigateTo('friends', false);
+					}
+				});
+			} catch (error: any) {
+				showModal({
+					title: "Erro",
+					message: error.message || "Não foi possível processar a solicitação",
+					type: "danger",
+					confirmText: "Tentar novamente"
+				});
+			}
+		}
+	});
 
 	document.addEventListener('click', async (e) => {
-        const target = e.target as HTMLElement;
-        const removeBtn = target.closest('.btn-friend-remove') as HTMLElement;
+		const target = e.target as HTMLElement;
+		const removeBtn = target.closest('.btn-friend-remove') as HTMLElement;
 
-        if (removeBtn) {
-            const friendId = removeBtn.getAttribute('data-id');
-            const friendName = removeBtn.getAttribute('data-name');
+		if (removeBtn) {
+			const friendId = removeBtn.getAttribute('data-id');
+			const friendName = removeBtn.getAttribute('data-name');
 
-            if (!friendId) return;
+			if (!friendId) return;
 
-            showModal({
-                title: "Remover Amigo",
-                message: `Tem certeza que deseja remover ${friendName} da sua lista de amigos?`,
-                type: "danger",
-                confirmText: "Remover",
-                cancelText: "Cancelar",
-                onConfirm: async () => {
-                    try {
+			showModal({
+				title: "Remover Amigo",
+				message: `Tem certeza que deseja remover ${friendName} da sua lista de amigos?`,
+				type: "danger",
+				confirmText: "Remover",
+				cancelText: "Cancelar",
+				onConfirm: async () => {
+					try {
 						console.log("ID que está indo para a URL:", friendId);
-                        const response = await friendsService.removeFriend(Number(friendId));
+						const response = await friendsService.removeFriend(Number(friendId));
 
-                        showModal({
-                            title: "Sucesso",
-                            message: response.message,
-                            type: "success",
-                            confirmText: "OK",
-                            onConfirm: () => {
-                                navigateTo('friends', false);
-                            }
-                        });
-                    } catch (error: any) {
-                        showModal({
-                            title: "Erro",
-                            message: error.message || "Não foi possível remover o amigo",
-                            type: "danger",
-                            confirmText: "Tentar novamente"
-                        });
-                    }
-                }
-            });
-        }
-    });
+						showModal({
+							title: "Sucesso",
+							message: response.message,
+							type: "success",
+							confirmText: "OK",
+							onConfirm: () => {
+								navigateTo('friends', false);
+							}
+						});
+					} catch (error: any) {
+						showModal({
+							title: "Erro",
+							message: error.message || "Não foi possível remover o amigo",
+							type: "danger",
+							confirmText: "Tentar novamente"
+						});
+					}
+				}
+			});
+		}
+	});
 }
 
 function setupSettingsEvents() {
@@ -868,85 +916,85 @@ function setupSettingsEvents() {
 }
 
 function setupRankingEvents(navigateTo: Function) { // Passando navigateTo se necessário, ou importe
-    
-    document.getElementById('btn-ranking-back')?.addEventListener('click', () => {
-        navigateTo('dashboard'); 
-    });
 
-    const container = document.getElementById('ranking-lists-container');
-    if (!container) return;
+	document.getElementById('btn-ranking-back')?.addEventListener('click', () => {
+		navigateTo('dashboard');
+	});
 
-    container.addEventListener('click', async (e) => {
-        const target = e.target as HTMLElement;
-        
-        // --- ADICIONAR AMIGO ---
-        const addBtn = target.closest('.btn-rank-add') as HTMLElement;
-        if (addBtn) {
-            const nick = addBtn.getAttribute('data-nick');
-            if (nick) {
-                try {
-                    await friendsService.sendFriendRequest({ nick });
-                    showModal({
-                        title: "Sucesso",
-                        message: `Solicitação enviada para ${nick}!`,
-                        type: "success"
-                    });
-                    addBtn.innerHTML = "<span>Enviado</span>";
-                    addBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                } catch (error: any) {
-                    showModal({
-                        title: "Erro",
-                        message: error.message || "Falha ao enviar solicitação",
-                        type: "danger"
-                    });
-                }
-            }
-        }
+	const container = document.getElementById('ranking-lists-container');
+	if (!container) return;
 
-        // --- REMOVER AMIGO ---
-        const removeBtn = target.closest('.btn-rank-remove') as HTMLElement;
-        if (removeBtn) {
-            const id = removeBtn.getAttribute('data-id');
-            const nick = removeBtn.getAttribute('data-nick');
-            
-            if (id && nick) {
-                showModal({
-                    title: "Remover Amigo",
-                    message: `Tem certeza que deseja remover ${nick} dos amigos?`,
-                    type: "danger",
-                    confirmText: "Remover",
-                    cancelText: "Cancelar",
-                    onConfirm: async () => {
-                        try {
-                            await friendsService.removeFriend(Number(id));
-                            showModal({
-                                title: "Removido",
-                                message: "Amizade desfeita.",
-                                type: "success",
-                                onConfirm: () => {
-                                    window.location.reload(); 
-                                }
-                            });
-                        } catch (error: any) {
-                            showModal({
-                                title: "Erro",
-                                message: error.message,
-                                type: "danger"
-                            });
-                        }
-                    }
-                });
-            }
-        }
-    });
+	container.addEventListener('click', async (e) => {
+		const target = e.target as HTMLElement;
+
+		// --- ADICIONAR AMIGO ---
+		const addBtn = target.closest('.btn-rank-add') as HTMLElement;
+		if (addBtn) {
+			const nick = addBtn.getAttribute('data-nick');
+			if (nick) {
+				try {
+					await friendsService.sendFriendRequest({ nick });
+					showModal({
+						title: "Sucesso",
+						message: `Solicitação enviada para ${nick}!`,
+						type: "success"
+					});
+					addBtn.innerHTML = "<span>Enviado</span>";
+					addBtn.classList.add('opacity-50', 'cursor-not-allowed');
+				} catch (error: any) {
+					showModal({
+						title: "Erro",
+						message: error.message || "Falha ao enviar solicitação",
+						type: "danger"
+					});
+				}
+			}
+		}
+
+		// --- REMOVER AMIGO ---
+		const removeBtn = target.closest('.btn-rank-remove') as HTMLElement;
+		if (removeBtn) {
+			const id = removeBtn.getAttribute('data-id');
+			const nick = removeBtn.getAttribute('data-nick');
+
+			if (id && nick) {
+				showModal({
+					title: "Remover Amigo",
+					message: `Tem certeza que deseja remover ${nick} dos amigos?`,
+					type: "danger",
+					confirmText: "Remover",
+					cancelText: "Cancelar",
+					onConfirm: async () => {
+						try {
+							await friendsService.removeFriend(Number(id));
+							showModal({
+								title: "Removido",
+								message: "Amizade desfeita.",
+								type: "success",
+								onConfirm: () => {
+									window.location.reload();
+								}
+							});
+						} catch (error: any) {
+							showModal({
+								title: "Erro",
+								message: error.message,
+								type: "danger"
+							});
+						}
+					}
+				});
+			}
+		}
+	});
 }
 
 function setupLogin2FAEvents() {
-    document.getElementById('btn-login-2fa-cancel')?.addEventListener('click', () => {
-        localStorage.removeItem('tempToken');
-        state.user = null;
-        navigateTo('login');
-    });
+	document.getElementById('btn-login-2fa-cancel')?.addEventListener('click', () => {
+		localStorage.removeItem('tempToken');
+		state.user = null;
+		navigateTo('login');
+	});
 
     document.getElementById('btn-login-2fa-confirm')?.addEventListener('click', async () => {
         const tokenInput = document.getElementById('input-login-2fa-code') as HTMLInputElement;
@@ -962,47 +1010,47 @@ function setupLogin2FAEvents() {
         //     return;
         // }
 
-        const tempToken = localStorage.getItem('tempToken');
-        if (!tempToken) {
-            navigateTo('login');
-            return;
-        }
+		const tempToken = localStorage.getItem('tempToken');
+		if (!tempToken) {
+			navigateTo('login');
+			return;
+		}
 
-        try {
-            const response = await authService.login2FA({
-                token: code,
-            }); 
+		try {
+			const response = await authService.login2FA({
+				token: code,
+			});
 
-            localStorage.setItem('token', response.token);
-            localStorage.removeItem('tempToken');
+			localStorage.setItem('token', response.token);
+			localStorage.removeItem('tempToken');
 
-            state.isAuthenticated = true;
-            state.user = {
-                id: response.user.id,
-                name: response.user.name,
-                nick: response.user.nick,
-                gang: response.user.gang,
-                isAnonymous: response.user.isAnonymous,
-                isOnline: true,
-                score: 0,
-                rank: 0,
-                has2FA: true
-            };
+			state.isAuthenticated = true;
+			state.user = {
+				id: response.user.id,
+				name: response.user.name,
+				nick: response.user.nick,
+				gang: response.user.gang,
+				isAnonymous: response.user.isAnonymous,
+				isOnline: true,
+				score: 0,
+				rank: 0,
+				has2FA: true
+			};
 
-            localStorage.setItem('appState', JSON.stringify(state));
-            navigateTo('dashboard');
+			localStorage.setItem('appState', JSON.stringify(state));
+			navigateTo('dashboard');
 
-        } catch (error: any) {
-            showModal({
-                title: "Acesso Negado",
-                message: error.message || "Código incorreto ou expirado.",
-                type: "danger",
-                confirmText: "Tentar novamente"
-            });
-            tokenInput.value = "";
-            tokenInput.focus();
-        }
-    });
+		} catch (error: any) {
+			showModal({
+				title: "Acesso Negado",
+				message: error.message || "Código incorreto ou expirado.",
+				type: "danger",
+				confirmText: "Tentar novamente"
+			});
+			tokenInput.value = "";
+			tokenInput.focus();
+		}
+	});
 }
 
 function initializeRoute() {

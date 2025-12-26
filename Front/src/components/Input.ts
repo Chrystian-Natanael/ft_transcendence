@@ -7,6 +7,7 @@ interface InputProps {
 	value?: string;
 	className?: string;
 	theme?: "default" | "potatoes" | "tomatoes";
+	attributes?: string;
 }
 
 const baseStyles =
@@ -27,7 +28,7 @@ const themeTomatoes = {
 	focus: "focus:border-red-400 focus:shadow-[0_0_10px_rgba(220,38,38,0.18)]",
 };
 
-export function Input({ id, type = "text", placeholder = "", value = "", className, theme = 'default'}: InputProps) {
+export function Input({ id, type = "text", placeholder = "", value = "", className, theme = 'default', attributes}: InputProps) {
 	let themeObj = themeDefault;
 	if (theme === 'potatoes') themeObj = themePotatoes;
 	else if (theme === 'tomatoes') themeObj = themeTomatoes;
@@ -41,6 +42,7 @@ export function Input({ id, type = "text", placeholder = "", value = "", classNa
 			placeholder="${placeholder}"
 			value="${value}"
 			class="${classList}"
+			${attributes}
 		>
 	`;
 }
