@@ -80,6 +80,7 @@ export function Button({
 			${id ? `id="${id}"` : ""}
 			${title ? `title="${title}"` : ""}
 			class="${cn(baseStyles, variantTheme[variant], className)}"
+			${attributes}
 		>
 			${text}
 		</button>

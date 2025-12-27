@@ -9,6 +9,9 @@ import { showModal } from "../utils/modalManager";
 import bgPotatoes from '../assets/bg-login-potatoes.png';
 import bgTomatoes from '../assets/bg-login-tomatoes.png';
 import bgDefault from '../assets/bg-login.png';
+import { Form } from "@/components/Form";
+import { validateForm } from "@/utils/formValidation";
+import { nickSchema } from "@/schemas/common.schemas";
 
 // --- HELPER LOCAL ---
 const StatItem = (label: string, valueId: string, colorClass: string = "text-white") => `
@@ -77,11 +80,17 @@ export function getProfileHtml() {
 
 						<div class="flex-1 w-full flex flex-col justify-between">
 							<div>
-								<label class="block text-sm text-gray-400 mb-2 ml-1">Nome de Exibição</label>
-								${Input({
-									id: "input-profile-name",
-									value: `${nick}`,
-									className: "mb-8 bg-slate-800/50 border-white/10 focus:bg-black/60 text-lg"
+
+								${Form({
+									id: "form-profile",
+									children: `
+										<label class="block text-sm text-gray-400 mb-2 ml-1">Nome de Exibição</label>
+										${Input({
+											id: "input-profile-nick",
+											value: `${nick}`,
+											className: "mb-8 bg-slate-800/50 border-white/10 focus:bg-black/60 text-lg"
+										})}
+									`
 								})}
 
 								<h3 class="text-lg text-white mb-4 font-bold flex items-center gap-2">
@@ -102,7 +111,8 @@ export function getProfileHtml() {
 									id: "btn-profile-save",
 									text: "Salvar Alterações",
 									variant: "primary",
-									className: "w-full md:w-auto md:px-12"
+									className: "w-full md:w-auto md:px-12",
+									attributes: 'type="submit" form="form-profile"',
 								})}
 							</div>
 						</div>
@@ -134,37 +144,49 @@ export function setupProfileEvents(navigate: (route: Route) => void) {
 	});
 
 	// 3. Salvar Alterações
-	document.getElementById('btn-profile-save')?.addEventListener('click', async () => {
-		const nameInput = document.getElementById('input-profile-name') as HTMLInputElement;
-		const newNick = nameInput.value.trim();
+	const formUpdateProfile = document.getElementById('form-profile') as HTMLFormElement;
+	formUpdateProfile?.addEventListener('submit', async (e) => {
+		e.preventDefault();
 
-		if (newNick && state.user) {
-			// Atualiza estado local
-			// Nota: Atualizamos o 'nick' pois é o nome de exibição editado
-			state.user.nick = newNick;
+		const nick = (document.getElementById('input-profile-nick') as HTMLInputElement)?.value;
 
-			// Opcional: Se quiser atualizar o 'name' também, descomente:
-			// state.user.name = newNick;
+		const formData = { nick };
+		const validation = validateForm(nickSchema, formData);
 
-			saveState(); // Persiste no localStorage
-
+		if (!validation.success) {
 			showModal({
-				title: "Perfil Atualizado",
-				message: `Seu nome de exibição foi alterado para ${newNick}. Continue dominando a arena!`,
-				type: "success",
-				confirmText: "Voltar ao Menu",
-				onConfirm: () => {
-					navigate('dashboard');
-				}
+				title: "Nick inválido",
+				message: "O nick deve ter entre 3 e 20 caracteres, contendo apenas letras, números e underscores.",
+				type: "danger",
+				confirmText: "OK"
 			});
+			return;
+		}
 
-			// TODO: Aqui você adicionaria a chamada ao backend:
-			// await userService.updateProfile({ nick: newNick });
-		} else {
+		if (nick === state.user?.nick) {
+			return ;
+		}
+
+		try {
+			// await profileService.updateProfile(formData);
+
+			// Atualizar estado global
+			if (state.user) {
+				state.user.nick = nick;
+			}
+
 			showModal({
-				title: "Erro",
-				message: "O nome de exibição não pode ficar vazio.",
-				type: "danger"
+				title: "Perfil atualizado!",
+				message: "Nome de exibição atualizado com sucesso.",
+				type: "success",
+				confirmText: "OK"
+			});
+		} catch (error: any) {
+			showModal({
+				title: "Erro ao atualizar",
+				message: error.message || "Não foi possível atualizar seu perfil.",
+				type: "danger",
+				confirmText: "Tentar novamente"
 			});
 		}
 	});
