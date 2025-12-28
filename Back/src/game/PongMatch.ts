@@ -10,18 +10,23 @@ const DEFAULT_PADDLE_HEIGHT = 130;
 const BALL_RADIUS = 10;
 const WIN_SCORE = 5;
 
-// Interface para os dados que vêm do banco/matchmaker
 export interface PlayerData {
     id: string;
+    socketId: string;
     nick: string;
-    avatar: string;      // URL da foto de perfil
-    gameAvatar: string;  // URL da skin da raquete
-    skin: string;        // 'tomato' ou 'potato' (legado/time)
+    avatar: string;
+    gameAvatar: string;
+    skin: string;
 }
 
 export class PongMatch {
   private io: Server;
   private state: GameState;
+  private roomId: string;
+  
+  // Propriedades Públicas para acesso no Server.ts
+  public p1SocketId: string;
+  public p2SocketId: string;
   
   private intervalId: NodeJS.Timeout | null = null;
   private powerUpTimeout: NodeJS.Timeout | null = null;
@@ -32,19 +37,29 @@ export class PongMatch {
   private p1MoveDir: number = 0;
   private p2MoveDir: number = 0;
 
+  // Velocidades individuais (para o PowerUp)
+  private p1CurrentSpeed: number = PADDLE_SPEED;
+  private p2CurrentSpeed: number = PADDLE_SPEED;
+
   private isBallMoving: boolean = false;
   private ballSpeed: number = 5; 
   private ballDir = { x: 0, y: 0 };
   
-  constructor(io: Server, p1Data: PlayerData, p2Data: PlayerData) {
+  constructor(io: Server, roomId: string, p1Data: PlayerData, p2Data: PlayerData) {
     this.io = io;
+    this.roomId = roomId;
+    
+    // Inicializa IDs públicos
+    this.p1SocketId = p1Data.socketId;
+    this.p2SocketId = p2Data.socketId;
+
     this.state = {
       tableWidth: 800,
       tableHeight: 600,
       ball: { x: 400, y: 300 },
       
       player1: { 
-          id: p1Data.id, 
+          id: p1Data.socketId, 
           y: 250, 
           score: 0, 
           height: DEFAULT_PADDLE_HEIGHT, 
@@ -56,7 +71,7 @@ export class PongMatch {
       },
       
       player2: { 
-          id: p2Data.id, 
+          id: p2Data.socketId, 
           y: 250, 
           score: 0, 
           height: DEFAULT_PADDLE_HEIGHT, 
@@ -101,8 +116,11 @@ export class PongMatch {
     this.lastHitterId = null;
     this.state.ball = { x: 400, y: 300 };
     
+    // Reseta velocidades
     this.ballSpeed = 5; 
     this.ballDir = { x: 0, y: 0 };
+    this.p1CurrentSpeed = PADDLE_SPEED;
+    this.p2CurrentSpeed = PADDLE_SPEED;
 
     let countdown = 3;
 
@@ -112,7 +130,7 @@ export class PongMatch {
             return;
         }
 
-        this.io.to([this.state.player1.id, this.state.player2.id]).emit('matchStatus', `starting:${countdown}`);
+        this.io.to(this.roomId).emit('matchStatus', `starting:${countdown}`);
         if (countdown <= 0) {
             clearInterval(timer);
             this.startBall();
@@ -125,7 +143,7 @@ export class PongMatch {
     if (!this.isGameRunning) return;
 
     this.isBallMoving = true;
-    this.io.to([this.state.player1.id, this.state.player2.id]).emit('matchStatus', 'playing');
+    this.io.to(this.roomId).emit('matchStatus', 'playing');
     
     const dirX = Math.random() > 0.5 ? 1 : -1;
     const angle = (Math.random() * Math.PI / 4) - (Math.PI / 8); 
@@ -160,7 +178,7 @@ export class PongMatch {
           }
       }
       
-      this.io.to([this.state.player1.id, this.state.player2.id]).emit('gameState', this.state);
+      this.io.to(this.roomId).emit('gameState', this.state);
     }, TICK_RATE);
   }
 
@@ -169,11 +187,11 @@ export class PongMatch {
     const p2 = this.state.player2;
 
     if (this.p1MoveDir !== 0) {
-        p1.y += this.p1MoveDir * PADDLE_SPEED;
+        p1.y += this.p1MoveDir * this.p1CurrentSpeed;
         p1.y = Math.max(0, Math.min(this.state.tableHeight - p1.height, p1.y));
     }
     if (this.p2MoveDir !== 0) {
-        p2.y += this.p2MoveDir * PADDLE_SPEED;
+        p2.y += this.p2MoveDir * this.p2CurrentSpeed;
         p2.y = Math.max(0, Math.min(this.state.tableHeight - p2.height, p2.y));
     }
   }
@@ -182,8 +200,14 @@ export class PongMatch {
     this.state.ball.x += this.ballDir.x * this.ballSpeed;
     this.state.ball.y += this.ballDir.y * this.ballSpeed;
 
-    if (this.state.ball.y - BALL_RADIUS <= 0 || this.state.ball.y + BALL_RADIUS >= this.state.tableHeight) {
-      this.ballDir.y *= -1;
+    // Colisão Teto/Chão (Correção de bug de grudar)
+    if (this.state.ball.y - BALL_RADIUS <= 0) {
+        this.state.ball.y = BALL_RADIUS; 
+        this.ballDir.y = Math.abs(this.ballDir.y);
+    } 
+    else if (this.state.ball.y + BALL_RADIUS >= this.state.tableHeight) {
+        this.state.ball.y = this.state.tableHeight - BALL_RADIUS;
+        this.ballDir.y = -Math.abs(this.ballDir.y);
     }
   }
 
@@ -192,29 +216,34 @@ export class PongMatch {
     const p1 = this.state.player1;
     const p2 = this.state.player2;
 
+    // Colisão P1 (Esquerda)
     if (ball.x - BALL_RADIUS <= 20 && ball.x + BALL_RADIUS >= 10) {
         if (ball.y + BALL_RADIUS >= p1.y && ball.y - BALL_RADIUS <= p1.y + p1.height) {
             this.handlePaddleHit(p1, 1);
         }
     }
-    else if (p1.shield && ball.x - BALL_RADIUS <= 15 && ball.x > 0) {
-       this.ballDir.x = Math.abs(this.ballDir.x);
-       p1.shield = false;
+    // ESCUDO P1: Checa se tem escudo E se a bola está na zona de perigo (mas não passou totalmente)
+    else if (p1.shield && ball.x - BALL_RADIUS <= 15 && ball.x > -10) {
+       this.ballDir.x = Math.abs(this.ballDir.x); // Rebate para direita
+       p1.shield = false; // Gasta escudo
        this.lastHitterId = p1.id;
     }
 
+    // Colisão P2 (Direita)
     const p2X = this.state.tableWidth - 20;
     if (ball.x + BALL_RADIUS >= p2X && ball.x - BALL_RADIUS <= p2X + 10) {
         if (ball.y + BALL_RADIUS >= p2.y && ball.y - BALL_RADIUS <= p2.y + p2.height) {
             this.handlePaddleHit(p2, -1);
         }
     }
-    else if (p2.shield && ball.x + BALL_RADIUS >= this.state.tableWidth - 15 && ball.x < this.state.tableWidth) {
-       this.ballDir.x = -Math.abs(this.ballDir.x);
-       p2.shield = false; 
+    // ESCUDO P2
+    else if (p2.shield && ball.x + BALL_RADIUS >= this.state.tableWidth - 15 && ball.x < this.state.tableWidth + 10) {
+       this.ballDir.x = -Math.abs(this.ballDir.x); // Rebate para esquerda
+       p2.shield = false; // Gasta escudo
        this.lastHitterId = p2.id;
     }
     
+    // PowerUp
     if (this.state.powerUp && this.state.powerUp.active) {
        const dist = Math.hypot(this.state.ball.x - this.state.powerUp.x, this.state.ball.y - this.state.powerUp.y);
        if (dist < 30) {
@@ -234,17 +263,12 @@ export class PongMatch {
     this.ballDir.y = Math.sin(angleRad);
 
     this.ballSpeed = Math.min(this.ballSpeed * 1.05, MAX_SPEED);
-    
     this.lastHitterId = player.id;
   }
 
   private checkGoal() {
-    if (this.state.ball.x < -20) {
-        this.handleScore('player2');
-    }
-    else if (this.state.ball.x > this.state.tableWidth + 20) {
-        this.handleScore('player1');
-    }
+    if (this.state.ball.x < -20) this.handleScore('player2');
+    else if (this.state.ball.x > this.state.tableWidth + 20) this.handleScore('player1');
   }
 
   private handleScore(scorer: 'player1' | 'player2') {
@@ -253,7 +277,7 @@ export class PongMatch {
     if (scorer === 'player1') this.state.player1.score++;
     else this.state.player2.score++;
 
-    this.io.to([this.state.player1.id, this.state.player2.id]).emit('scoreUpdate', { scorer });
+    this.io.to(this.roomId).emit('scoreUpdate', { scorer });
 
     if (this.state.player1.score >= WIN_SCORE || this.state.player2.score >= WIN_SCORE) {
         this.endMatch(this.state.player1.score >= WIN_SCORE ? this.state.player1.id : this.state.player2.id);
@@ -264,11 +288,8 @@ export class PongMatch {
 
   private startPowerUpSpawner() {
     if (this.powerUpTimeout) clearTimeout(this.powerUpTimeout);
-    
     if(!this.isBallMoving || !this.isGameRunning) return;
-    
     const randomTime = Math.random() * (10000 - 5000) + 5000;
-    
     this.powerUpTimeout = setTimeout(() => {
         if (!this.state.powerUp && this.isBallMoving && this.isGameRunning) this.spawnPowerUp();
         if (this.isBallMoving && this.isGameRunning) this.startPowerUpSpawner();
@@ -280,7 +301,6 @@ export class PongMatch {
     const randomType = types[Math.floor(Math.random() * types.length)];
     const x = 200 + Math.random() * (this.state.tableWidth - 400);
     const y = 100 + Math.random() * (this.state.tableHeight - 200);
-    
     this.state.powerUp = { active: true, x, y, type: randomType };
     setTimeout(() => {
         if (this.state.powerUp && this.state.powerUp.x === x) {
@@ -297,17 +317,43 @@ export class PongMatch {
     if (type === PowerUpType.BIG_PADDLE) {
         player.height = 180;
         setTimeout(() => player.height = DEFAULT_PADDLE_HEIGHT, 5000);
-    } else if (type === PowerUpType.SHIELD) {
+    } 
+    else if (type === PowerUpType.SHIELD) {
         player.shield = true;
-    } else if (type === PowerUpType.SPEED_BOOST) {
-        this.ballSpeed += 8;
+    } 
+    else if (type === PowerUpType.SPEED_BOOST) {
+        const isP1 = player.id === this.state.player1.id;
+        if (isP1) this.p1CurrentSpeed = PADDLE_SPEED * 1.5;
+        else this.p2CurrentSpeed = PADDLE_SPEED * 1.5;
+
         setTimeout(() => { 
-            this.ballSpeed = Math.max(5, this.ballSpeed - 8); 
+            if (isP1) this.p1CurrentSpeed = PADDLE_SPEED;
+            else this.p2CurrentSpeed = PADDLE_SPEED;
         }, 5000);
     }
   }
 
-  private endMatch(winnerId: string) {
+  // --- Método Público para o Servidor Chamar ---
+  public handleDisconnection(socketId: string) {
+      if (!this.isGameRunning) return;
+
+      let winnerId = '';
+      let message = '';
+
+      if (socketId === this.p1SocketId) {
+          winnerId = this.state.player2.id;
+          message = 'Oponente desconectou. Você venceu!';
+      } else if (socketId === this.p2SocketId) {
+          winnerId = this.state.player1.id;
+          message = 'Oponente desconectou. Você venceu!';
+      }
+
+      if (winnerId) {
+          this.endMatch(winnerId, message);
+      }
+  }
+
+  private endMatch(winnerId: string, customMessage?: string) {
     this.isGameRunning = false;
     this.isBallMoving = false;
 
@@ -319,9 +365,11 @@ export class PongMatch {
     if (p1Socket) p1Socket.removeAllListeners('movePaddle');
     if (p2Socket) p2Socket.removeAllListeners('movePaddle');
 
-    this.io.to([this.state.player1.id, this.state.player2.id]).emit('gameOver', {
+    const defaultMsg = winnerId === this.state.player1.id ? 'Player 1 Wins!' : 'Player 2 Wins!';
+
+    this.io.to(this.roomId).emit('gameOver', {
         winnerId: winnerId,
-        message: winnerId === this.state.player1.id ? 'Tomatoes Win!' : 'Potatoes Win!'
+        message: customMessage || defaultMsg
     });
   }
 }

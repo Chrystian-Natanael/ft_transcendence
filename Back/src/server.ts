@@ -39,6 +39,8 @@ const app = fastify({ logger: true })
 
 let waitingPlayer: Socket | null = null;
 
+const activeMatches: Map<string, PongMatch> = new Map();
+
 // Configuração do CORS
 app.register(cors, {
     origin: '*',
@@ -94,13 +96,29 @@ const start = async () => {
         });
 
         io.on('connection', (socket: Socket) => {
-            console.log('Cliente conectado no Socket:', socket.id);
+            console.log('Cliente conectado:', socket.id);
 
-            // Matchmaking Simples (FIFO)
+            const decoded = socket.handshake.auth.token 
+                ? app.jwt.decode(socket.handshake.auth.token) 
+                : {};
+            
+            const userData = (decoded && typeof decoded === 'object') ? decoded : {};
+
+            socket.data = { ...userData, socketId: socket.id };
+
+            // Matchmaking
             if (waitingPlayer && waitingPlayer.id !== socket.id) {
-                console.log(`Iniciando partida: ${waitingPlayer.id} vs ${socket.id}`);
+                console.log(`Iniciando partida: ${waitingPlayer.data.nick} vs ${socket.data.nick}`);
                 
-                new PongMatch(io, waitingPlayer.id, socket.id);
+                const roomId = `match_${waitingPlayer.id}_${socket.id}`;
+                
+                waitingPlayer.join(roomId);
+                socket.join(roomId);
+
+                const match = new PongMatch(io, roomId, waitingPlayer.data, socket.data);
+                
+                activeMatches.set(waitingPlayer.id, match);
+                activeMatches.set(socket.id, match);
                 
                 waitingPlayer = null; 
             } else {
@@ -109,10 +127,19 @@ const start = async () => {
                 socket.emit('matchStatus', 'waiting');
             }
 
-            socket.on('disconnect', () => {
+           socket.on('disconnect', () => {
                 console.log('Cliente desconectado:', socket.id);
+                
                 if (waitingPlayer === socket) {
                     waitingPlayer = null;
+                }
+
+                const match = activeMatches.get(socket.id);
+                if (match) {
+                    match.handleDisconnection(socket.id);
+                    
+                    activeMatches.delete(match.p1SocketId);
+                    activeMatches.delete(match.p2SocketId);
                 }
             });
         });

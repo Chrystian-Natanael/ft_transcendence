@@ -2,11 +2,8 @@ import { state } from '../store/appState';
 import type { GameState } from '../types/game';
 import { PowerUpType } from '../types/game';
 
-// Importação das imagens (Garante que o bundler gere as URLs corretas)
 import imgBlueBall from '../assets/blueball.png';
 import imgRedBall from '../assets/redball.png';
-// Se tiver um avatar padrão, importe também:
-// import imgDefaultAvatar from '../assets/default-avatar.png'; 
 
 // Constantes
 const TABLE_WIDTH = 800;
@@ -45,9 +42,7 @@ export class LocalGameEngine {
   constructor(difficulty: number) {
     this.difficulty = difficulty as 1 | 2 | 3;
     
-    // Dados do Usuário Logado
     const myNick = state.user?.nick || 'Você';
-    // Se não tiver avatar, use um fallback (string ou import)
     const myProfilePic = state.user?.avatar || '/assets/default-avatar.png';
     const myGameAvatar = state.user?.gameAvatar || imgRedBall;
 
@@ -56,7 +51,6 @@ export class LocalGameEngine {
       tableHeight: TABLE_HEIGHT,
       ball: { x: TABLE_WIDTH / 2, y: TABLE_HEIGHT / 2 },
       
-      // PLAYER 1 (HUMANO)
       player1: { 
           id: 'p1', 
           y: 250, 
@@ -64,13 +58,12 @@ export class LocalGameEngine {
           height: DEFAULT_PADDLE_HEIGHT, 
           shield: false, 
           nick: myNick,
-          // CORREÇÃO: Usar 'avatar' (sem Url) para compatibilidade com GameController
           avatar: myProfilePic,     
           gameAvatar: myGameAvatar, 
           skin: 'tomato' 
       },
       
-      // PLAYER 2 (IA - C.A.D.E.T.E.)
+      // (IA - C.A.D.E.T.E.)
       player2: { 
           id: 'cpu', 
           y: 250, 
@@ -78,7 +71,6 @@ export class LocalGameEngine {
           height: DEFAULT_PADDLE_HEIGHT, 
           shield: false, 
           nick: 'C.A.D.E.T.E.', 
-          // CORREÇÃO: Usar 'avatar' aqui também
           avatar: AI_PROFILE_PIC,
           gameAvatar: AI_GAME_AVATAR,
           skin: 'potato' 
@@ -88,8 +80,6 @@ export class LocalGameEngine {
     };
   }
 
-  // ... (O restante da classe permanece igual: on, emit, start, loop, physics...)
-  
   public on(event: string, callback: GameEventHandler) {
     if (!this.eventListeners[event]) this.eventListeners[event] = [];
     this.eventListeners[event].push(callback);
@@ -168,9 +158,9 @@ export class LocalGameEngine {
     let errorMargin = 0; 
     
     switch(this.difficulty) {
-        case 1: errorMargin = 60; break;
-        case 2: errorMargin = 30; break;
-        case 3: errorMargin = 0; break;
+        case 1: errorMargin = 90; break;
+        case 2: errorMargin = 60; break;
+        case 3: errorMargin = 30; break;
     }
 
     const targetY = ball.y + (Math.random() * errorMargin - errorMargin/2);
@@ -204,12 +194,17 @@ export class LocalGameEngine {
     }
   }
 
-  private updateBallPhysics(dt: number) {
+private updateBallPhysics(dt: number) {
     this.state.ball.x += this.ballDir.x * this.ballSpeed * dt;
     this.state.ball.y += this.ballDir.y * this.ballSpeed * dt;
 
-    if (this.state.ball.y - BALL_RADIUS <= 0 || this.state.ball.y + BALL_RADIUS >= this.state.tableHeight) {
-      this.ballDir.y *= -1;
+    if (this.state.ball.y - BALL_RADIUS <= 0) {
+        this.state.ball.y = BALL_RADIUS;
+        this.ballDir.y = Math.abs(this.ballDir.y);
+    } 
+    else if (this.state.ball.y + BALL_RADIUS >= this.state.tableHeight) {
+        this.state.ball.y = this.state.tableHeight - BALL_RADIUS;
+        this.ballDir.y = -Math.abs(this.ballDir.y);
     }
   }
 
