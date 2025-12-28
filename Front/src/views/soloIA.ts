@@ -1,95 +1,125 @@
-    import { Button } from "../components/Button";
-import { state, type Route } from "../store/appState";
+import { state } from "../store/appState";
+import { Button } from "../components/Button";
 
-    // imgs
-    import bgPotatoes from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
-import bgDefault from '../assets/bg-login.png';
+// imgs
+import bgPotatoes from "../assets/bg-login-potatoes.png";
+import bgTomatoes from "../assets/bg-login-tomatoes.png";
+import bgDefault from "../assets/bg-login.png";
 
-    // --- GERAÇÃO DO HTML (Async) ---
-    export function getSoloIAHtml() {
-        const userGang = state.user?.gang || 'potatoes';
-        const isPotato = userGang === 'potatoes';
+// --- GERAÇÃO DO HTML ---
+export function getSoloIAHtml() {
+    const userGang = state.user?.gang || "potatoes";
+    const isPotato = userGang === "potatoes";
 
-        // Estilos dinâmicos (mesmo padrão do Friends)
-        const headerColor = isPotato ? 'text-yellow-500' : 'text-red-500';
-        const titleDropShadow = isPotato
-            ? 'drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]'
-            : 'drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]';
+    // Estilos dinâmicos
+    const headerColor = isPotato ? "text-yellow-500" : "text-red-500";
+    const titleDropShadow = isPotato
+        ? "drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]"
+        : "drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]";
 
-        const backgroundByGang: Record<string, string> = {
-            potatoes: bgPotatoes,
-            tomatoes: bgTomatoes,
-        };
+    const backgroundByGang: Record<string, string> = {
+        potatoes: bgPotatoes,
+        tomatoes: bgTomatoes,
+    };
 
-        const backgroundImage = backgroundByGang[userGang] || bgDefault;
+    const backgroundImage = backgroundByGang[userGang] || bgDefault;
 
-        return `
-            <img src="${backgroundImage}" alt="Background"
-                class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
+    return `
+        <img src="${backgroundImage}" alt="Background"
+             class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
 
-            <div id="solo-ia-view-root"
-                class="min-h-screen p-4 md:p-6 flex flex-col items-center w-full max-w-6xl mx-auto">
+        <div id="solo-ia-view-root"
+             class="min-h-screen p-4 md:p-6 flex flex-col items-start w-full max-w-6xl mx-auto">
 
-                <!-- Header -->
-                <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-end
-                            gap-4 mb-6 md:mb-8 border-b border-white/10 pb-4">
-                    <h2 class="${headerColor} text-4xl md:text-5xl font-bold tracking-widest ${titleDropShadow}">
-                        MODO SOLO
-                    </h2>
+            <!-- Header -->
+            <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-end
+                        gap-4 mb-6 border-b border-white/10 pb-4">
+                <h2 class="${headerColor} text-4xl md:text-5xl font-bold tracking-widest ${titleDropShadow}">
+                    MODO SOLO
+                </h2>
 
-                    <div class="self-end sm:self-auto">
-                        ${Button({
-                            id: "btn-solo-back",
-                            text: "← VOLTAR",
-                            variant: "ghost",
-                            className: "w-auto min-w-[120px] max-w-[200px]",
-                        })}
-                    </div>
-                </div>
-                
-                    <!-- Subtítulo -->
-                    <div class="mb-8 md:mb-10 w-full flex justify-center">
-                        <div
-                            class="w-full max-w-md bg-slate-900/60 backdrop-blur-md
-                                px-6 py-3 rounded-xl
-                                border border-white/10 shadow-lg
-                                flex justify-center">
-                            <h3 class="text-lg md:text-xl text-white font-bold flex items-center gap-2 tracking-wide">
-                                <span class="text-cyan-400">🎯</span>
-                                Selecione a dificuldade
-                            </h3>
-                        </div>
-                    </div>
-
-                <!-- Conteúdo -->
-                <div class="w-full flex flex-col items-center justify-center gap-6 mt-8 md:mt-12 max-w-md">
-
-                    <button id="btn-solo-easy"
-                        class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl
-                            font-bold text-xl bg-green-600/20 text-green-400
-                            border border-green-500/30 hover:bg-green-600/30 transition">
-                        🤖 Fácil
-                    </button>
-
-                    <button id="btn-solo-medium"
-                        class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl
-                            font-bold text-xl bg-yellow-600/20 text-yellow-400
-                            border border-yellow-500/30 hover:bg-yellow-600/30 transition">
-                        🤖 Médio
-                    </button>
-
-                    <button id="btn-solo-hard"
-                        class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl
-                            font-bold text-xl bg-red-600/20 text-red-400
-                            border border-red-500/30 hover:bg-red-600/30 transition">
-                        🤖 Difícil
-                    </button>
-
+                <div>
+                    ${Button({
+                        id: "btn-solo-back",
+                        text: "← VOLTAR",
+                        variant: "ghost",
+                        className: "w-auto min-w-[120px] max-w-[200px]",
+                    })}
                 </div>
             </div>
-        `;
-    }
+
+            <!-- CADETE + CONTEÚDO -->
+            <div class="w-full max-w-4xl">
+                <div
+                    class="bg-black/30 backdrop-blur-md
+                           px-8 py-8 rounded-xl
+                           border border-white/10
+                           shadow-lg
+                           flex flex-col gap-6">
+
+                    <!-- Acrônimo -->
+                    <span
+                        class="${headerColor} text-sm md:text-base font-extrabold
+                               tracking-[0.35em] uppercase">
+                        C.A.D.E.T.E
+                    </span>
+
+                    <!-- Descrição -->
+                    <span
+                        class="text-gray-200 text-sm md:text-base
+                               leading-relaxed">
+                        Computer of Advanced Development for Tactical and Eliminatory Strategies
+                    </span>
+
+                    <!-- Divider -->
+                    <div class="w-full h-px bg-white/10"></div>
+
+                    <!-- Subtítulo -->
+                    <h3 class="text-lg md:text-xl text-white font-bold
+                               flex items-center justify-center gap-3 tracking-wide">
+                        <span class="text-cyan-400">🎯</span>
+                        Selecione a dificuldade
+                    </h3>
+
+                    <!-- Botões -->
+                    <div class="w-full flex flex-col items-center gap-4 mt-2">
+
+                        <button id="btn-solo-easy"
+                            class="w-full max-w-md flex items-center justify-center gap-3
+                                   px-6 py-3 rounded-lg
+                                   font-bold text-lg
+                                   bg-green-600/20 text-green-400
+                                   border border-green-500/30
+                                   hover:bg-green-600/30 transition">
+                            🤖 Fácil
+                        </button>
+
+                        <button id="btn-solo-medium"
+                            class="w-full max-w-md flex items-center justify-center gap-3
+                                   px-6 py-3 rounded-lg
+                                   font-bold text-lg
+                                   bg-yellow-600/20 text-yellow-400
+                                   border border-yellow-500/30
+                                   hover:bg-yellow-600/30 transition">
+                            🤖 Médio
+                        </button>
+
+                        <button id="btn-solo-hard"
+                            class="w-full max-w-md flex items-center justify-center gap-3
+                                   px-6 py-3 rounded-lg
+                                   font-bold text-lg
+                                   bg-red-600/20 text-red-400
+                                   border border-red-500/30
+                                   hover:bg-red-600/30 transition">
+                            🤖 Difícil
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
     // --- LÓGICA ---
     export function setupSoloIAEvents(navigate: (route: Route) => void) {
