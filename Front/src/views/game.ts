@@ -84,10 +84,6 @@ export function getGameHtml() {
                     <div id="game-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-50 rounded-lg">
                         <h2 id="overlay-title" class="text-3xl font-bold text-white mb-4 animate-pulse">Aguardando Oponente...</h2>
                         <p id="overlay-msg" class="text-gray-400 mb-6 text-sm">Convide um amigo ou aguarde na fila.</p>
-
-                        <button id="btn-restart" class="hidden px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded font-bold transition">
-                            Jogar Novamente
-                        </button>
                     </div>
                 </div>
             </div>
@@ -249,11 +245,9 @@ export class GameController {
         this.toggleOverlay(true);
         const title = document.getElementById('overlay-title');
         const msg = document.getElementById('overlay-msg');
-        const btn = document.getElementById('btn-restart');
         
         if (title) title.innerText = titleText;
         if (msg) msg.innerText = msgText;
-        if (btn) btn.classList.add('hidden');
     }
 
     private onGameState = (state: GameState) => {
@@ -528,13 +522,15 @@ export class GameController {
             overlay.classList.remove('hidden');
             if (this.els['overlay-msg']) this.els['overlay-msg'].innerText = data.message;
             if (this.els['overlay-title']) this.els['overlay-title'].innerText = "FIM DE JOGO";
-            
-            const btn = document.getElementById('btn-restart');
-            if(btn) {
-                btn.classList.remove('hidden');
-                btn.onclick = () => window.location.reload(); 
-            }
         }
+
+        showModal({
+            title: "FIM DE JOGO",
+            type: "success",
+            message: data.message,
+            onConfirm: () => navigateTo('dashboard'),
+            confirmText: "Voltar ao Dashboard",
+        })
     }
 
     public destroy() {

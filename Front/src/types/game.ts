@@ -8,7 +8,7 @@ export const PowerUpType = {
 
 export type PowerUpType = typeof PowerUpType[keyof typeof PowerUpType];
 
-export type PlayerSkin = 'potato' | 'tomato' | 'ia';
+export type PlayerSkin = 'potato' | 'tomato' | 'ai';
 
 export interface PlayerState {
   id: string;      // Socket ID

@@ -364,6 +364,8 @@ public handleDisconnection(socketId: string) {
       if (winnerSocketId) {
           this.endMatch(winnerSocketId, message);
       }
+
+      
   }
 
   private endMatch(winnerSocketId: string, customMessage?: string) {

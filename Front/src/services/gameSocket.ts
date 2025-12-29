@@ -2,6 +2,12 @@ import { io, Socket } from 'socket.io-client';
 import { GameController } from '../views/game';
 import { api } from './api';
 
+const BASE_URL = import.meta.env.VITE_API_URL
+
+if (!BASE_URL) {
+    throw new Error("VITE_API_URL is not defined in environment variables");
+}
+
 let socket: Socket | null = null;
 let controller: GameController | null = null;
 
@@ -35,7 +41,11 @@ function setupController(retryCount = 0) {
         controller = null;
     }
 
+    
+
     const canvasElement = document.getElementById('pongCanvas');
+    if (!canvasElement){
+        if(window.location.hash !== '#game') return;}
     
     console.log(canvasElement)
 
@@ -85,7 +95,7 @@ export function initGameSocket() {
         return;
     }
 
-    socket = io('http://localhost:3333', {
+    socket = io(BASE_URL, {
         auth: { token },
         transports: ['websocket', 'polling']
     });
@@ -98,6 +108,7 @@ export function initGameSocket() {
     socket.on('connect_error', (err) => {
         console.error("Erro de conexão com o jogo:", err);
     });
+
 }
 
 export function disconnectGame() {
