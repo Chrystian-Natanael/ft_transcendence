@@ -15,12 +15,12 @@ import PowerUpBigger from '../assets/PowerUp_Bigger.png';
 import PowerUpPepper from '../assets/PowerUp_Pepper.png';
 import PowerUpShield from '../assets/PowerUpShield.png';
 
+import imgAIDown from '../assets/moves/AI_Down.png';
+import imgAIUp from '../assets/moves/AI_Up.png';
 import imgPotatoDown from '../assets/moves/Potato_Down.png';
 import imgPotatoUp from '../assets/moves/Potato_Up.png';
 import imgTomatoDown from '../assets/moves/Tomato_Down.png';
 import imgTomatoUp from '../assets/moves/Tomato_Up.png';
-import imgAIUp from '../assets/moves/AI_Up.png';
-import imgAIDown from '../assets/moves/AI_Down.png';
 
 
 import { getDefaultAvatar } from "@/components/AvatarOptions";
@@ -77,7 +77,7 @@ export function getGameHtml() {
 
                     <canvas id="pongCanvas" width="800" height="600" class="block rounded-lg cursor-none bg-slate-900/50"></canvas>
 
-                    <div id="p2-game-avatar" class="absolute right-[-180px] w-[200px] h-[200px] transition-all duration-75 pointer-events-none z-20">
+                    <div id="p2-game-avatar" class="absolute right-[-230px] w-[280px] h-[280px] transition-all duration-75 pointer-events-none z-20">
                         <img id="p2-skin-img" src="${avatarSrcP1}" class="w-full h-full drop-shadow-lg filter brightness-110 transform scale-x-[-1]">
                     </div>
 
@@ -460,19 +460,8 @@ export class GameController {
 
     private drawPowerUp(powerUp: NonNullable<GameState['powerUp']>) {
         const { x, y, type } = powerUp;
-        const iconSize = 50;
+        const iconSize = 80;
         const offset = iconSize / 2;
-
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, 25, 0, Math.PI * 2);
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#fff';
-        this.ctx.stroke();
-
-        this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + Math.sin(Date.now() / 200) * 0.2})`;
-        this.ctx.lineWidth = 3;
-        this.ctx.stroke();
 
         // Seleciona a imagem correta baseado no tipo de PowerUp
         let icon: HTMLImageElement | undefined;
