@@ -1,6 +1,13 @@
 Tela de perfil
 	Arrumar estatísticas
 
+JOGO:
+	arrumar o lag
+	arrumar a personalização do jogo
+	verificar esquemas de pontuação do fim da partida.
+	Encerrar o jogo de ambos quando um se desconectar
+	Retirar o botão de jogar novamente
+
 Front end
 	Ao entrar na página e já tiver um token salvo 
 		verificar se aquele token ainda está válido
@@ -16,15 +23,12 @@ Back end
 
 Fazer componentes
 	componente texto para cores baseado em gangues
-	componente de imagens
 
 Outras coisas
 	Docker
 	readme
 
-Rotas /game:
-	/ranked - Rota que encontra um adversario de maneira aleatória mas filtrada (Nivelando por faixa de score para balanceamento)
-
+Rotas /game testar:
 	/casual/invite - Rota que invita um AMIGO para um jogo e te redireciona para a tela de aguardando oponente
 	/casual/response - Envia uma resposta (accept, decline ) para um convite de jogo (nick)
 	

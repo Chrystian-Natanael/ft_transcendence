@@ -19,10 +19,11 @@ export const inviteFriendRouteSchema = {
     summary: 'Convidar amigo para jogar',
     body: {
         type: 'object',
-        properties: {
-            nick: { type: 'string' }
-        },
-        required: ['nick']
+        examples: [
+            {
+                nick: 'player123'
+            }
+        ]
     }
 };
 
@@ -31,10 +32,11 @@ export const respondInviteRouteSchema = {
     summary: 'Responder convite de jogo',
     body: {
         type: 'object',
-        properties: {
-            nick: { type: 'string' },
-            action: { type: 'string', enum: ['accept', 'decline'] }
-        },
-        required: ['nick', 'action']
+        examples: [
+            {
+                nick: 'player123',
+                action: 'accept'
+            }
+        ]
     }
 };
