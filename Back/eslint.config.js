@@ -39,19 +39,18 @@ export default [
 			'@typescript-eslint/no-explicit-any': 'warn',
 			'@typescript-eslint/no-unused-vars': 'off',
 
-			// Regras de imports
 			'unused-imports/no-unused-imports': 'error',
 			'unused-imports/no-unused-vars': ['warn', {
 				'argsIgnorePattern': '^_'
 			}],
 			'import/order': ['error', {
 				'groups': [
-					'builtin',		// Node.js built-in modules
-					'external',		// npm packages
-					'internal',		// Absolute imports
-					'parent',		// ../
-					'sibling',		// ./
-					'index'			// ./index
+					'builtin',
+					'external',
+					'internal',
+					'parent',
+					'sibling',
+					'index'
 				],
 				'newlines-between': 'always',
 				'alphabetize': {

@@ -6,7 +6,6 @@ import { disconnectGame, initGameSocket } from './services/gameSocket';
 import { showModal } from './utils/modalManager';
 import { GameController } from './views/game';
 
-//Views
 import * as DashboardView from './views/dashboard';
 import * as FriendsView from './views/friends';
 import * as GameView from './views/game';
@@ -26,9 +25,7 @@ const app = document.querySelector<HTMLDivElement>('#app')!;
 let localGameController: GameController | null = null;
 let navigationParams: any = {};
 
-// --- NAVEGAÇÃO CENTRAL ---
 export function navigateTo(route: Route, params?: any, addToHistory = true) {
-	// Guards de Autenticação
 	const protectedRoutes: Route[] = ['dashboard', 'profile', 'game', 'game-solo', 'friends', 'leaderboard', 'settings', '2fa', '2fa-disable', 'soloIA'];
 	const publicRoutes: Route[] = ['login', 'register', 'login2fa'];
 	if (params) {
@@ -52,7 +49,6 @@ export function navigateTo(route: Route, params?: any, addToHistory = true) {
 	renderView(route);
 }
 
-// --- HELPER: Bloqueio de Anônimos ---
 function checkAnonymousAccess(): boolean {
 	if (state.user && state.user.isAnonymous) {
 		showModal({
@@ -62,9 +58,9 @@ function checkAnonymousAccess(): boolean {
 			confirmText: "Voltar ao Dashboard",
 			onConfirm: () => navigateTo("dashboard", false)
 		});
-		return true; // Bloqueado
+		return true;
 	}
-	return false; // Liberado
+	return false;
 }
 
 async function renderView(route: Route) {
@@ -193,20 +189,5 @@ window.addEventListener('popstate', (event) => {
 });
 
 const token = localStorage.getItem('token')
-
-// if (state.user && token) {		// AVISAR DANI Q TA COLOCANDO O BACKGROUND DE FORMA ERRADA
-// 	try {
-// 		const user = await profileService.getProfile() as any
-// 		state.user = user;
-// 		saveState()
-// 	} catch {
-// 		navigateTo(`login`);
-// 		localStorage.removeItem('token');
-// 		state.user = null;
-// 		saveState()
-// 	}
-// 	window.location.hash = `#dashboard`;
-// }
-
 const initialRoute = (window.location.hash.replace('#', '') as Route) || 'login';
 navigateTo(initialRoute, false);

@@ -1,4 +1,3 @@
-// src/routes/game.routes.ts
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { Server } from 'socket.io';
 import { PlayerController } from '../database/controllers/player.controller';
@@ -11,14 +10,11 @@ interface RankedQueueItem {
 	timestamp: number;
 }
 
-// Fila em memória
 let rankedQueue: RankedQueueItem[] = [];
 const pendingInvites = new Map<string, number>();
 
-// HELPER: Busca socket pelo ID do usuário armazenado em socket.data.id
 function findSocketByUserId(io: Server, userId: number) {
 	for (const [_, socket] of io.sockets.sockets) {
-		// Usa '==' para garantir compatibilidade entre string e number
 		if (socket.data?.id == userId) {
 			return socket;
 		}
@@ -35,14 +31,12 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
 		return user;
 	};
 
-	// --- ROTA DE MATCHMAKING (RANKED) ---
 	app.get('/ranked', {
 		onRequest: [app.authenticate],
 		schema: rankedMatchmakingRouteSchema
 	}, async (req: FastifyRequest, reply) => {
 		const currentUser = (await verifyUser(req, reply))!;
 
-		// 1. Remove usuário atual da fila (limpeza preventiva)
 		rankedQueue = rankedQueue.filter(item => item.userId !== currentUser.id);
 
 		const SCORE_RANGE = 10000;
@@ -60,12 +54,9 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
 			const opponentSocket = findSocketByUserId(io, opponentItem.userId);
 
 			if (opponentSocket) {
-				// SUCESSO!
 				rankedQueue.splice(opponentIndex, 1);
 
 				const roomId = `ranked_${Math.min(currentUser.id, opponentItem.userId)}_${Math.max(currentUser.id, opponentItem.userId)}_${Date.now()}`;
-
-				// Avisa o oponente via Socket
 				opponentSocket.emit('matchFound', {
 					roomId,
 					opponentId: currentUser.id,
@@ -81,7 +72,6 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
 					message: 'Oponente encontrado! Conectando...'
 				});
 			} else {
-				// Limpeza de socket fantasma
 				rankedQueue.splice(opponentIndex, 1);
 			}
 		}
@@ -98,21 +88,16 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
 		});
 	});
 
-	// --- ROTA: CONVIDAR AMIGO (CASUAL) ---
 	app.post('/casual/invite', {
 		onRequest: [app.authenticate],
-		// Se tiver schema de validação, adicione aqui (ex: schema: inviteFriendRouteSchema)
 	}, async (req: FastifyRequest, reply) => {
 		const sender = (await verifyUser(req, reply))!;
-
-		// Tipagem simples do corpo da requisição
 		const { nick } = req.body as { nick: string };
 
 		if (!nick) {
 			return reply.code(400).send({ error: 'Nick do amigo é obrigatório.' });
 		}
 
-		// 1. Buscar usuário alvo
 		const target = await PlayerController.findByNick(nick);
 
 		if (!target) {
@@ -123,12 +108,8 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
 			return reply.code(400).send({ error: 'Você não pode convidar a si mesmo.' });
 		}
 
-		// 2. Salvar convite na memória
-		// Chave = REMETENTE_ID:DESTINATARIO_ID
 		const inviteKey = `${sender.id}:${target.id}`;
 		pendingInvites.set(inviteKey, Date.now());
-
-		// 3. Notificar o alvo em Tempo Real (Socket.IO)
 		const targetSocket = findSocketByUserId(io, target.id);
 
 		if (targetSocket) {
@@ -142,33 +123,26 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
 		return reply.send({ message: `Convite enviado para ${target.nick}!` });
 	});
 
-	// --- ROTA: RESPONDER CONVITE (CASUAL) ---
 	app.post('/casual/response', {
 		onRequest: [app.authenticate],
 		schema: respondInviteRouteSchema,
 		preHandler: [app.validateBody(GameResponseSchema)]
 	}, async (req: FastifyRequest, reply) => {
 		const { nick, action } = req.body as GameResponseInput;
-		const currentUser = (await verifyUser(req, reply))!; // Quem aceitou/recusou
+		const currentUser = (await verifyUser(req, reply))!;
 
 		const sender = await PlayerController.findByNick(nick);
 		if (!sender) return reply.code(404).send({ error: 'Remetente não encontrado' });
 
-		// A chave é: REMETENTE:DESTINATARIO (sender:currentUser)
 		const inviteKey = `${sender.id}:${currentUser.id}`;
-
-		// Verifica se existe convite pendente (opcional, mas recomendado)
-		// if (!pendingInvites.has(inviteKey)) return reply.code(400)...
-
 		pendingInvites.delete(inviteKey);
 
 		const senderSocket = findSocketByUserId(io, sender.id);
 
 		if (action === 'decline') {
 			if (senderSocket) {
-				// CORREÇÃO: Payload compatível com frontend
 				senderSocket.emit('inviteDeclined', {
-					nick: currentUser.nick // O frontend espera 'nick' para mostrar quem recusou
+					nick: currentUser.nick
 				});
 			}
 			return reply.send({ status: 'declined', message: 'Convite recusado.' });
@@ -178,14 +152,12 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
 			const roomId = `casual_${sender.id}_${currentUser.id}_${Date.now()}`;
 
 			if (senderSocket) {
-				// Avisa quem convidou que o jogo vai começar
 				senderSocket.emit('inviteAccepted', {
 					roomId,
 					opponentId: currentUser.id
 				});
 			}
 
-			// Retorna roomId para quem aceitou (via resposta HTTP)
 			return reply.send({
 				status: 'accepted',
 				roomId: roomId,
@@ -194,7 +166,6 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
 		}
 	});
 
-	// Sair da fila
 	app.post('/queue/leave', { onRequest: [app.authenticate] }, async (req, reply) => {
 		const userId = req.user.id;
 		rankedQueue = rankedQueue.filter(u => u.userId !== userId);

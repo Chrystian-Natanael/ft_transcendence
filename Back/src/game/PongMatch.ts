@@ -1,10 +1,8 @@
 import { Server } from 'socket.io';
 import { GameState, PlayerSkin, PowerUpType } from '../types/game';
-// CORREÇÃO 1: Importar Prisma e remover db
 import { prisma } from '../database/prisma';
 import { PlayerController } from '../database/controllers/player.controller';
 
-// Constantes
 const FPS = 60;
 const TICK_RATE = 1000 / FPS;
 const PADDLE_SPEED = 10;
@@ -34,7 +32,6 @@ export class PongMatch {
 	private p1UserId: number;
 	private p2UserId: number;
 
-	// Propriedades Públicas para acesso no Server.ts
 	public p1SocketId: string;
 	public p2SocketId: string;
 
@@ -47,7 +44,6 @@ export class PongMatch {
 	private p1MoveDir: number = 0;
 	private p2MoveDir: number = 0;
 
-	// Velocidades individuais (para o PowerUp)
 	private p1CurrentSpeed: number = PADDLE_SPEED;
 	private p2CurrentSpeed: number = PADDLE_SPEED;
 
@@ -60,7 +56,6 @@ export class PongMatch {
 		this.roomId = roomId;
 		this.isRanked = isRanked;
 
-		// Inicializa IDs públicos
 		this.p1SocketId = p1Data.socketId;
 		this.p2SocketId = p2Data.socketId;
 
@@ -129,8 +124,6 @@ export class PongMatch {
 		this.isBallMoving = false;
 		this.lastHitterId = null;
 		this.state.ball = { x: 400, y: 300 };
-
-		// Reseta velocidades
 		this.ballSpeed = 5;
 		this.ballDir = { x: 0, y: 0 };
 		this.p1CurrentSpeed = PADDLE_SPEED;
@@ -214,7 +207,6 @@ export class PongMatch {
 		this.state.ball.x += this.ballDir.x * this.ballSpeed;
 		this.state.ball.y += this.ballDir.y * this.ballSpeed;
 
-		// Colisão Teto/Chão (Correção de bug de grudar)
 		if (this.state.ball.y - BALL_RADIUS <= 0) {
 			this.state.ball.y = BALL_RADIUS;
 			this.ballDir.y = Math.abs(this.ballDir.y);
@@ -230,34 +222,31 @@ export class PongMatch {
 		const p1 = this.state.player1;
 		const p2 = this.state.player2;
 
-		// Colisão P1 (Esquerda)
 		if (ball.x - BALL_RADIUS <= 20 && ball.x + BALL_RADIUS >= 10) {
 			if (ball.y + BALL_RADIUS >= p1.y && ball.y - BALL_RADIUS <= p1.y + p1.height) {
 				this.handlePaddleHit(p1, 1);
 			}
 		}
-		// ESCUDO P1
+
 		else if (p1.shield && ball.x - BALL_RADIUS <= 15 && ball.x > -10) {
-			this.ballDir.x = Math.abs(this.ballDir.x); // Rebate para direita
-			p1.shield = false; // Gasta escudo
+			this.ballDir.x = Math.abs(this.ballDir.x);
+			p1.shield = false;
 			this.lastHitterId = p1.id;
 		}
 
-		// Colisão P2 (Direita)
 		const p2X = this.state.tableWidth - 20;
 		if (ball.x + BALL_RADIUS >= p2X && ball.x - BALL_RADIUS <= p2X + 10) {
 			if (ball.y + BALL_RADIUS >= p2.y && ball.y - BALL_RADIUS <= p2.y + p2.height) {
 				this.handlePaddleHit(p2, -1);
 			}
 		}
-		// ESCUDO P2
+
 		else if (p2.shield && ball.x + BALL_RADIUS >= this.state.tableWidth - 15 && ball.x < this.state.tableWidth + 10) {
-			this.ballDir.x = -Math.abs(this.ballDir.x); // Rebate para esquerda
-			p2.shield = false; // Gasta escudo
+			this.ballDir.x = -Math.abs(this.ballDir.x);
+			p2.shield = false;
 			this.lastHitterId = p2.id;
 		}
 
-		// PowerUp
 		if (this.state.powerUp && this.state.powerUp.active) {
 			const dist = Math.hypot(this.state.ball.x - this.state.powerUp.x, this.state.ball.y - this.state.powerUp.y);
 			if (dist < 30) {
@@ -347,7 +336,6 @@ export class PongMatch {
 		}
 	}
 
-	// --- Método Público para o Servidor Chamar ---
 	public handleDisconnection(socketId: string) {
 		if (!this.isGameRunning) return;
 
@@ -380,7 +368,6 @@ export class PongMatch {
 		if (p1Socket) p1Socket.removeAllListeners('movePaddle');
 		if (p2Socket) p2Socket.removeAllListeners('movePaddle');
 
-		// --- LÓGICA DE PONTOS (RANKED) ---
 		if (this.isRanked) {
 			this.processRankedPoints(winnerSocketId);
 		}
@@ -393,19 +380,16 @@ export class PongMatch {
 		});
 	}
 
-	// CORREÇÃO 2: Atualização via Prisma, não setScore
 	private async processRankedPoints(winnerSocketId: string) {
 		const isP1Winner = winnerSocketId === this.p1SocketId;
 
 		const winnerId = isP1Winner ? this.p1UserId : this.p2UserId;
 		const loserId = isP1Winner ? this.p2UserId : this.p1UserId;
 
-		// 1. Busca dados atuais (para calcular perdas)
 		const winnerPlayer = await prisma.player.findUnique({ where: { id: winnerId } });
 		const loserPlayer = await prisma.player.findUnique({ where: { id: loserId } });
 
 		if (winnerPlayer && loserPlayer) {
-			// 2. Calcula pontos do perdedor (para não ficar negativo)
 			const currentLoserScore = loserPlayer.score || 0;
 			const actualLosePoints = Math.min(currentLoserScore, POINTS_LOSE);
 

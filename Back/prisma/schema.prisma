@@ -21,6 +21,9 @@ model Player {
   score         Int       @default(0)
   isOnline      Boolean   @default(false)
   avatar        String?
+  gamesWinned   Int       @default (0)
+  gamesLosed    Int       @default (0)
+  gamesPlayed   Int       @default (0)
 
   // Relations
   friendsAsPlayer1    Friends[]     @relation("Player1")

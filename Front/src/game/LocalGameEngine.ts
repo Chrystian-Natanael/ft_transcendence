@@ -2,17 +2,13 @@ import { state } from '../store/appState';
 import type { GameState } from '../types/game';
 import { PowerUpType } from '../types/game';
 
-import imgRedBall from '../assets/redball.png';
-import aiLvl1 from '../assets/Profile_images/AI_LVL_1.jpg';
-import aiLvl2 from '../assets/Profile_images/AI_LVL_2.jpg';
-import aiLvl3 from '../assets/Profile_images/AI_LVL_3.jpg';
-import imgProfileDefaultTomato from '../assets/Profile_images/Tomato_default.jpg';
-import imgProfileDefaultPotato from '../assets/Profile_images/Potato_default.jpg';
+import imgRedBall from '/assets/redball.png';
+import aiLvl1 from '/assets/Profile_images/AI_LVL_1.jpg';
+import aiLvl2 from '/assets/Profile_images/AI_LVL_2.jpg';
+import aiLvl3 from '/assets/Profile_images/AI_LVL_3.jpg';
+import imgProfileDefaultTomato from '/assets/Profile_images/Tomato_default.jpg';
+import imgProfileDefaultPotato from '/assets/Profile_images/Potato_default.jpg';
 
-
-// AI Profile images by difficulty
-
-// Constantes
 const TABLE_WIDTH = 800;
 const TABLE_HEIGHT = 600;
 const PADDLE_SPEED = 10;
@@ -28,19 +24,19 @@ export class LocalGameEngine {
   private animationId: number | null = null;
   private lastTime: number = 0;
   private eventListeners: Record<string, GameEventHandler[]> = {};
-  
+
   private isRunning: boolean = false;
 
   private p1MoveDir: number = 0;
   private aiMoveDir: number = 0;
-  
+
   private isBallMoving: boolean = false;
   private ballSpeed: number = 5;
   private ballDir = { x: 0, y: 0 };
-  
+
   private lastHitterId: string | null = null;
   private powerUpTimeout: any = null;
-  private difficulty: 1 | 2 | 3; 
+  private difficulty: 1 | 2 | 3;
 
   constructor(difficulty: number) {
     this.difficulty = difficulty as 1 | 2 | 3;
@@ -50,7 +46,7 @@ export class LocalGameEngine {
     const myNick = state.user?.nick || 'Você';
     const myProfilePic = state.user?.avatar || imgProfileDefault;
     const myGameAvatar = state.user?.gameAvatar || imgRedBall;
-    
+
     let aiAvatar = aiLvl1;
 
     if (this.difficulty === 2) {
@@ -63,32 +59,31 @@ export class LocalGameEngine {
       tableWidth: TABLE_WIDTH,
       tableHeight: TABLE_HEIGHT,
       ball: { x: TABLE_WIDTH / 2, y: TABLE_HEIGHT / 2 },
-      
-      player1: { 
-          id: 'p1', 
-          y: 250, 
-          score: 0, 
-          height: DEFAULT_PADDLE_HEIGHT, 
-          shield: false, 
+
+      player1: {
+          id: 'p1',
+          y: 250,
+          score: 0,
+          height: DEFAULT_PADDLE_HEIGHT,
+          shield: false,
           nick: myNick,
-          avatar: myProfilePic,     
-          gameAvatar: myGameAvatar, 
+          avatar: myProfilePic,
+          gameAvatar: myGameAvatar,
           skin: myGang === 'potatoes' ? 'potato' : 'tomato'
 
       },
-      
-      // (IA - C.A.D.E.T.E.)
-      player2: { 
-          id: 'cpu', 
-          y: 250, 
-          score: 0, 
-          height: DEFAULT_PADDLE_HEIGHT, 
-          shield: false, 
-          nick: 'C.A.D.E.T.E.', 
+
+      player2: {
+          id: 'cpu',
+          y: 250,
+          score: 0,
+          height: DEFAULT_PADDLE_HEIGHT,
+          shield: false,
+          nick: 'C.A.D.E.T.E.',
           avatar: aiAvatar,
-          skin: 'ai' 
+          skin: 'ai'
       },
-      
+
       powerUp: null
     };
   }
@@ -112,7 +107,7 @@ export class LocalGameEngine {
   public start() {
     this.startRoundTimer();
     this.lastTime = performance.now();
-    
+
     this.isRunning = true;
     this.loop(this.lastTime);
   }
@@ -120,7 +115,7 @@ export class LocalGameEngine {
   public stop() {
     this.isRunning = false;
     this.isBallMoving = false;
-    
+
     if (this.animationId) {
         cancelAnimationFrame(this.animationId);
         this.animationId = null;
@@ -143,14 +138,14 @@ export class LocalGameEngine {
       }
       this.updateBallPhysics(deltaTime);
       this.checkCollisions();
-      
+
       if (this.isBallMoving) {
           this.checkGoal();
       }
     }
 
     this.emit('gameState', this.state);
-    
+
     if (this.isRunning) {
         this.animationId = requestAnimationFrame(this.loop);
     }
@@ -159,7 +154,7 @@ export class LocalGameEngine {
   private updateAI() {
     const ai = this.state.player2;
     const ball = this.state.ball;
-    
+
     const canSeeBall = this.ballDir.x > 0 && ball.x > TABLE_WIDTH / 3;
 
     if (!canSeeBall) {
@@ -168,8 +163,8 @@ export class LocalGameEngine {
     }
 
     const aiCenter = ai.y + (ai.height / 2);
-    let errorMargin = 0; 
-    
+    let errorMargin = 0;
+
     switch(this.difficulty) {
         case 1: errorMargin = 90; break;
         case 2: errorMargin = 60; break;
@@ -190,16 +185,16 @@ export class LocalGameEngine {
   private updatePaddles(dt: number) {
     const p1 = this.state.player1;
     const ai = this.state.player2;
-    
+
     if (this.p1MoveDir !== 0) {
       p1.y += this.p1MoveDir * PADDLE_SPEED * dt;
       p1.y = Math.max(0, Math.min(this.state.tableHeight - p1.height, p1.y));
     }
-    
+
     let aiSpeedFactor = 1.0;
-    if (this.difficulty === 1) aiSpeedFactor = 0.55; 
-    else if (this.difficulty === 2) aiSpeedFactor = 0.85; 
-    else if (this.difficulty === 3) aiSpeedFactor = 1.30; 
+    if (this.difficulty === 1) aiSpeedFactor = 0.55;
+    else if (this.difficulty === 2) aiSpeedFactor = 0.85;
+    else if (this.difficulty === 3) aiSpeedFactor = 1.30;
 
     if (this.aiMoveDir !== 0) {
       ai.y += this.aiMoveDir * (PADDLE_SPEED * aiSpeedFactor) * dt;
@@ -214,7 +209,7 @@ private updateBallPhysics(dt: number) {
     if (this.state.ball.y - BALL_RADIUS <= 0) {
         this.state.ball.y = BALL_RADIUS;
         this.ballDir.y = Math.abs(this.ballDir.y);
-    } 
+    }
     else if (this.state.ball.y + BALL_RADIUS >= this.state.tableHeight) {
         this.state.ball.y = this.state.tableHeight - BALL_RADIUS;
         this.ballDir.y = -Math.abs(this.ballDir.y);
@@ -226,32 +221,29 @@ private updateBallPhysics(dt: number) {
     const p1 = this.state.player1;
     const ai = this.state.player2;
 
-    // Colisão P1 (Esquerda)
     if (ball.x - BALL_RADIUS <= 20 && ball.x + BALL_RADIUS >= 10) {
         if (ball.y + BALL_RADIUS >= p1.y && ball.y - BALL_RADIUS <= p1.y + p1.height) {
             this.handlePaddleHit(p1, 1);
         }
-    } 
+    }
     else if (p1.shield && ball.x - BALL_RADIUS <= 15) {
        this.ballDir.x = Math.abs(this.ballDir.x);
        p1.shield = false;
        this.lastHitterId = p1.id;
     }
 
-    // Colisão IA (Direita)
     const aiX = this.state.tableWidth - 20;
     if (ball.x + BALL_RADIUS >= aiX && ball.x - BALL_RADIUS <= aiX + 10) {
         if (ball.y + BALL_RADIUS >= ai.y && ball.y - BALL_RADIUS <= ai.y + ai.height) {
             this.handlePaddleHit(ai, -1);
         }
-    } 
+    }
     else if (ai.shield && ball.x + BALL_RADIUS >= this.state.tableWidth - 15) {
        this.ballDir.x = -Math.abs(this.ballDir.x);
        ai.shield = false;
        this.lastHitterId = ai.id;
     }
 
-    // PowerUp
     if (this.state.powerUp && this.state.powerUp.active) {
        const dist = Math.hypot(ball.x - this.state.powerUp.x, ball.y - this.state.powerUp.y);
        if (dist < 30) {
@@ -283,7 +275,7 @@ private updateBallPhysics(dt: number) {
 
   private handleScore(scorer: 'player1' | 'player2') {
     this.isBallMoving = false;
-    
+
     if (scorer === 'player1') this.state.player1.score++;
     else this.state.player2.score++;
 
@@ -302,7 +294,7 @@ private updateBallPhysics(dt: number) {
 
   private startRoundTimer() {
     this.isBallMoving = false;
-    this.lastHitterId = null; 
+    this.lastHitterId = null;
     this.state.ball = { x: TABLE_WIDTH / 2, y: TABLE_HEIGHT / 2 };
     this.ballSpeed = 5;
     this.ballDir = { x: 0, y: 0 };
@@ -329,19 +321,19 @@ private updateBallPhysics(dt: number) {
     this.isBallMoving = true;
     this.emit('matchStatus', 'playing');
     const dirX = Math.random() > 0.5 ? 1 : -1;
-    const angle = (Math.random() * Math.PI / 4) - (Math.PI / 8); 
-    this.ballDir = { 
-        x: dirX * Math.cos(angle), 
-        y: Math.sin(angle) 
+    const angle = (Math.random() * Math.PI / 4) - (Math.PI / 8);
+    this.ballDir = {
+        x: dirX * Math.cos(angle),
+        y: Math.sin(angle)
     };
-    
+
     this.schedulePowerUp();
   }
 
   private schedulePowerUp() {
       clearTimeout(this.powerUpTimeout);
       if (!this.isBallMoving || !this.isRunning) return;
-      
+
       const randomTime = Math.random() * (10000 - 5000) + 5000;
       this.powerUpTimeout = setTimeout(() => {
           if (!this.state.powerUp && this.isBallMoving && this.isRunning) this.spawnPowerUp();
@@ -354,9 +346,9 @@ private updateBallPhysics(dt: number) {
     const randomType = types[Math.floor(Math.random() * types.length)];
     const x = 200 + Math.random() * (this.state.tableWidth - 400);
     const y = 100 + Math.random() * (this.state.tableHeight - 200);
-    
+
     this.state.powerUp = { active: true, x, y, type: randomType };
-    
+
     setTimeout(() => {
         if (this.state.powerUp && this.state.powerUp.x === x) {
             this.state.powerUp = null;
@@ -376,8 +368,8 @@ private updateBallPhysics(dt: number) {
         player.shield = true;
     } else if (type === PowerUpType.SPEED_BOOST) {
         this.ballSpeed += 8;
-        setTimeout(() => { 
-            this.ballSpeed = Math.max(5, this.ballSpeed - 8); 
+        setTimeout(() => {
+            this.ballSpeed = Math.max(5, this.ballSpeed - 8);
         }, 5000);
     }
   }

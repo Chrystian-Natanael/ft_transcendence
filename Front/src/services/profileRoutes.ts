@@ -49,15 +49,12 @@ interface UserData {
 	gamesWinned: number;
 	gamesLosed: number;
 	gamesPlayed: number;
+	winRate: number;
 }
 
 export const profileService = {
 	updateProfile: (data: UpdateNickPayload): Promise<UpdateNickResponse> =>
 		api.patch<UpdateNickResponse>("/users/me", data),
-		// api.request<UpdateNickResponse>("/users/me", {
-		// 	method: "PATCH",
-		// 	body: data
-		// }),
 
 	updateAvatar: (data: UpdateAvatarPayload): Promise<UpdateAvatarResponse> =>
 		api.patch<UpdateAvatarResponse>("/users/me/avatar", data),

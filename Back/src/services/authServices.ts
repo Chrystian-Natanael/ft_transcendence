@@ -38,9 +38,6 @@ export class AuthService {
 					lastActivity: { lt: thresholdDate }
 				}
 			});
-			if (result.count > 0) {
-				console.log(`[CLEANUP] Limpou ${result.count} usuários anônimos inativos.`);
-			}
 		} catch (error) {
 			console.error("Erro ao limpar usuários anônimos:", error);
 		}

@@ -1,61 +1,54 @@
-// src/views/ranking.ts
 import { Button } from "../components/Button";
-import { state, type Route } from "../store/appState";
-import { leaderboardService } from "../services/leaderboardRoutes";
 import { friendsService } from "../services/friendsRoutes";
+import { leaderboardService } from "../services/leaderboardRoutes";
+import { state, type Route } from "../store/appState";
 import { showModal } from "../utils/modalManager";
+import bgPotatoes from '/assets/bg-login-potatoes.png';
+import bgTomatoes from '/assets/bg-login-tomatoes.png';
+import bgDefault from '/assets/bg-login.png';
 
-//imgs
-import bgPotatoes from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
-import bgDefault from '../assets/bg-login.png';
-
-// --- HELPERS ---
 const backgroundByGang = {
-    potatoes: bgPotatoes,
-    tomatoes: bgTomatoes,
+	potatoes: bgPotatoes,
+	tomatoes: bgTomatoes,
 };
 
 function formatName(name: string): string {
-    if (name.length <= 15) return name;
-    return name.substring(0, 15) + '...';
+	if (name.length <= 15) return name;
+	return name.substring(0, 15) + '...';
 }
 
-// Tipos locais ou importados
 export interface LeaderboardUser {
-    id: number;
-    name: string;
-    nick: string;
-    avatar?: string;
-    isAnonymous: boolean;
-    score: number;
-    rank: number;
-    isOnline: boolean;
-    gang: 'potatoes' | 'tomatoes';
+	id: number;
+	name: string;
+	nick: string;
+	avatar?: string;
+	isAnonymous: boolean;
+	score: number;
+	rank: number;
+	isOnline: boolean;
+	gang: 'potatoes' | 'tomatoes';
 }
 
 function renderRankItem(player: LeaderboardUser, index: number, currentUserId: number, friendIds: number[]): string {
-    const isPotato = player.gang === 'potatoes';
-    const isMe = player.id === currentUserId;
-    const isFriend = friendIds.includes(player.id);
+	const isPotato = player.gang === 'potatoes';
+	const isMe = player.id === currentUserId;
+	const isFriend = friendIds.includes(player.id);
 
-    const themeColor = isPotato ? "text-yellow-400" : "text-red-400";
-    const borderColor = isPotato ? "hover:border-yellow-500/50" : "hover:border-red-500/50";
-    const glowColor = isPotato ? "group-focus:shadow-[0_0_15px_rgba(234,179,8,0.3)]" : "group-focus:shadow-[0_0_15px_rgba(239,68,68,0.3)]";
-    const statusColor = player.isOnline ? "bg-green-500 shadow-[0_0_5px_#22c55e]" : "bg-gray-500";
+	const themeColor = isPotato ? "text-yellow-400" : "text-red-400";
+	const borderColor = isPotato ? "hover:border-yellow-500/50" : "hover:border-red-500/50";
+	const glowColor = isPotato ? "group-focus:shadow-[0_0_15px_rgba(234,179,8,0.3)]" : "group-focus:shadow-[0_0_15px_rgba(239,68,68,0.3)]";
+	const statusColor = player.isOnline ? "bg-green-500 shadow-[0_0_5px_#22c55e]" : "bg-gray-500";
 
-    // Medalhas
-    let rankDisplay = `<span class="font-mono text-gray-400 font-bold">#${index + 1}</span>`;
-    if (index === 0) rankDisplay = `<span class="text-2xl">🥇</span>`;
-    if (index === 1) rankDisplay = `<span class="text-2xl">🥈</span>`;
-    if (index === 2) rankDisplay = `<span class="text-2xl">🥉</span>`;
+	let rankDisplay = `<span class="font-mono text-gray-400 font-bold">#${index + 1}</span>`;
+	if (index === 0) rankDisplay = `<span class="text-2xl">🥇</span>`;
+	if (index === 1) rankDisplay = `<span class="text-2xl">🥈</span>`;
+	if (index === 2) rankDisplay = `<span class="text-2xl">🥉</span>`;
 
-    // Botões de Ação
-    let actionButton = '';
-    
-    if (!isMe) {
-        if (isFriend) {
-            actionButton = `
+	let actionButton = '';
+
+	if (!isMe) {
+		if (isFriend) {
+			actionButton = `
                 <button
                     class="btn-rank-remove flex items-center gap-1 bg-red-900/80 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-colors shadow-[0_0_10px_rgba(239,68,68,0.2)] cursor-pointer"
                     data-id="${player.id}"
@@ -65,8 +58,8 @@ function renderRankItem(player: LeaderboardUser, index: number, currentUserId: n
                     <i class="fas fa-user-minus"></i> <span>Remover</span>
                 </button>
             `;
-        } else {
-            actionButton = `
+		} else {
+			actionButton = `
                 <button
                     class="btn-rank-add flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-colors shadow-[0_0_10px_rgba(8,145,178,0.5)] cursor-pointer"
                     data-nick="${player.nick}"
@@ -75,15 +68,14 @@ function renderRankItem(player: LeaderboardUser, index: number, currentUserId: n
                     <i class="fas fa-user-plus"></i> <span>Add</span>
                 </button>
             `;
-        }
-    } else {
-        actionButton = `<span class="text-xs text-gray-500 font-bold px-2">VOCÊ</span>`;
-    }
+		}
+	} else {
+		actionButton = `<span class="text-xs text-gray-500 font-bold px-2">VOCÊ</span>`;
+	}
 
-    // Avatar
-    const avatar = player.avatar || '/assets/perfil-sla.png';
+	const avatar = player.avatar || '//assets/perfil-sla.png';
 
-    return `
+	return `
         <div tabindex="0" class="group relative flex items-center justify-between p-3 bg-slate-900/40 border border-white/5 rounded-lg mb-2 transition-all duration-300 cursor-pointer ${borderColor} ${glowColor} outline-none">
             <div class="flex items-center gap-3 md:gap-4">
                 <div class="w-8 flex justify-center shrink-0">
@@ -112,59 +104,54 @@ function renderRankItem(player: LeaderboardUser, index: number, currentUserId: n
     `;
 }
 
-// --- HTML (Async) ---
 export async function getRankingHtml() {
-    const user = state.user;
-    if (!user) return `<div class="p-10 text-white">Erro: Usuário não logado</div>`;
+	const user = state.user;
+	if (!user) return `<div class="p-10 text-white">Erro: Usuário não logado</div>`;
 
-    // 1. Fetch de Dados
-    let players: LeaderboardUser[] = [];
-    let myFriendsIds: number[] = [];
+	let players: LeaderboardUser[] = [];
+	let myFriendsIds: number[] = [];
 
-    try {
-        const [leaderboardData, friendsData] = await Promise.all([
-            leaderboardService.getLeaderboard(),
-            friendsService.listFriends()
-        ]);
-        
-        players = leaderboardData.map((u: any) => ({
-            ...u,
-            isAnonymous: u.isAnonymous ?? false
-        }));
-        myFriendsIds = friendsData.map((f: any) => f.id);
+	try {
+		const [leaderboardData, friendsData] = await Promise.all([
+			leaderboardService.getLeaderboard(),
+			friendsService.listFriends()
+		]);
 
-    } catch (error) {
-        console.error("Erro ao carregar ranking", error);
-        return `<div class="p-10 text-red-500 text-center">Falha ao carregar ranking. Tente novamente mais tarde.</div>`;
-    }
+		players = leaderboardData.map((u: any) => ({
+			...u,
+			isAnonymous: u.isAnonymous ?? false
+		}));
+		myFriendsIds = friendsData.map((f: any) => f.id);
 
-    // 2. Processamento
-    const potatoPlayers = players.filter(p => p.gang === 'potatoes');
-    const tomatoPlayers = players.filter(p => p.gang === 'tomatoes');
+	} catch (error) {
+		console.error("Erro ao carregar ranking", error);
+		return `<div class="p-10 text-red-500 text-center">Falha ao carregar ranking. Tente novamente mais tarde.</div>`;
+	}
 
-    const totalPotatoScore = potatoPlayers.reduce((acc, curr) => acc + curr.score, 0);
-    const totalTomatoScore = tomatoPlayers.reduce((acc, curr) => acc + curr.score, 0);
-    const totalGlobalScore = totalPotatoScore + totalTomatoScore;
-    const potatoPercentage = totalGlobalScore > 0 ? Math.round((totalPotatoScore / totalGlobalScore) * 100) : 50;
+	const potatoPlayers = players.filter(p => p.gang === 'potatoes');
+	const tomatoPlayers = players.filter(p => p.gang === 'tomatoes');
 
-    // Dados do Usuário
-    const nick = user.nick;
-    const gang = user.gang;
-    const currentUserInRanking = players.find(p => p.id === user.id);
-    const score = currentUserInRanking ? currentUserInRanking.score : (user.score || 0);
-    const rank = currentUserInRanking ? currentUserInRanking.rank : "-";
+	const totalPotatoScore = potatoPlayers.reduce((acc, curr) => acc + curr.score, 0);
+	const totalTomatoScore = tomatoPlayers.reduce((acc, curr) => acc + curr.score, 0);
+	const totalGlobalScore = totalPotatoScore + totalTomatoScore;
+	const potatoPercentage = totalGlobalScore > 0 ? Math.round((totalPotatoScore / totalGlobalScore) * 100) : 50;
 
-    // Estilos
-    const isPotato = gang === 'potatoes';
-    const userThemeColor = isPotato ? 'text-yellow-400' : 'text-red-400';
-    const userBorderColor = isPotato ? 'border-yellow-500' : 'border-red-500';
-    const userShadowColor = isPotato ? 'shadow-[0_0_10px_#eab308]' : 'shadow-[0_0_10px_#ef4444]';
-    const headerColor = isPotato ? 'text-yellow-400' : 'text-red-400';
-    const titleDropShadow = isPotato ? 'drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]';
-    const backgroundImage = backgroundByGang[gang] || bgDefault;
-    const avatarSrc = currentUserInRanking?.avatar || user.avatar || "/assets/perfil-sla.png";
+	const nick = user.nick;
+	const gang = user.gang;
+	const currentUserInRanking = players.find(p => p.id === user.id);
+	const score = currentUserInRanking ? currentUserInRanking.score : (user.score || 0);
+	const rank = currentUserInRanking ? currentUserInRanking.rank : "-";
 
-    return `
+	const isPotato = gang === 'potatoes';
+	const userThemeColor = isPotato ? 'text-yellow-400' : 'text-red-400';
+	const userBorderColor = isPotato ? 'border-yellow-500' : 'border-red-500';
+	const userShadowColor = isPotato ? 'shadow-[0_0_10px_#eab308]' : 'shadow-[0_0_10px_#ef4444]';
+	const headerColor = isPotato ? 'text-yellow-400' : 'text-red-400';
+	const titleDropShadow = isPotato ? 'drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]';
+	const backgroundImage = backgroundByGang[gang] || bgDefault;
+	const avatarSrc = currentUserInRanking?.avatar || user.avatar || "//assets/perfil-sla.png";
+
+	return `
         <style>
             .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
             .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); border-radius: 4px; }
@@ -182,11 +169,11 @@ export async function getRankingHtml() {
                 </h2>
                 <div class="self-end sm:self-auto">
                     ${Button({
-                        id: "btn-ranking-back",
-                        text: "← VOLTAR",
-                        variant: "ghost",
-                        className: "w-auto min-w-[120px] max-w-[200px]",
-                    })}
+		id: "btn-ranking-back",
+		text: "← VOLTAR",
+		variant: "ghost",
+		className: "w-auto min-w-[120px] max-w-[200px]",
+	})}
                 </div>
             </div>
 
@@ -254,82 +241,72 @@ export async function getRankingHtml() {
     `;
 }
 
-// --- LÓGICA (Controller) ---
 export function setupRankingEvents(navigate: (route: Route) => void) {
+	document.getElementById('btn-ranking-back')?.addEventListener('click', () => {
+		navigate('dashboard');
+	});
 
-    // Voltar
-    document.getElementById('btn-ranking-back')?.addEventListener('click', () => {
-        navigate('dashboard');
-    });
+	const container = document.getElementById('ranking-lists-container');
+	if (!container) return;
 
-    // Eventos de lista (Delegation)
-    const container = document.getElementById('ranking-lists-container');
-    if (!container) return;
+	container.addEventListener('click', async (e) => {
+		const target = e.target as HTMLElement;
+		const addBtn = target.closest('.btn-rank-add') as HTMLElement;
+		if (addBtn) {
+			const nick = addBtn.getAttribute('data-nick');
+			if (nick) {
+				try {
+					await friendsService.sendFriendRequest({ nick });
+					showModal({
+						title: "Sucesso",
+						message: `Solicitação enviada para ${nick}!`,
+						type: "success"
+					});
+					addBtn.innerHTML = "<span>Enviado</span>";
+					addBtn.classList.add('opacity-50', 'cursor-not-allowed');
+				} catch (error: any) {
+					showModal({
+						title: "Erro",
+						message: error.message || "Falha ao enviar solicitação",
+						type: "danger"
+					});
+				}
+			}
+		}
 
-    container.addEventListener('click', async (e) => {
-        const target = e.target as HTMLElement;
+		const removeBtn = target.closest('.btn-rank-remove') as HTMLElement;
+		if (removeBtn) {
+			const id = removeBtn.getAttribute('data-id');
+			const nick = removeBtn.getAttribute('data-nick');
 
-        // --- ADICIONAR AMIGO ---
-        const addBtn = target.closest('.btn-rank-add') as HTMLElement;
-        if (addBtn) {
-            const nick = addBtn.getAttribute('data-nick');
-            if (nick) {
-                try {
-                    await friendsService.sendFriendRequest({ nick });
-                    showModal({
-                        title: "Sucesso",
-                        message: `Solicitação enviada para ${nick}!`,
-                        type: "success"
-                    });
-                    
-                    // Feedback visual no botão
-                    addBtn.innerHTML = "<span>Enviado</span>";
-                    addBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                } catch (error: any) {
-                    showModal({
-                        title: "Erro",
-                        message: error.message || "Falha ao enviar solicitação",
-                        type: "danger"
-                    });
-                }
-            }
-        }
-
-        // --- REMOVER AMIGO ---
-        const removeBtn = target.closest('.btn-rank-remove') as HTMLElement;
-        if (removeBtn) {
-            const id = removeBtn.getAttribute('data-id');
-            const nick = removeBtn.getAttribute('data-nick');
-
-            if (id && nick) {
-                showModal({
-                    title: "Remover Amigo",
-                    message: `Tem certeza que deseja remover ${nick} dos amigos?`,
-                    type: "danger",
-                    confirmText: "Remover",
-                    cancelText: "Cancelar",
-                    onConfirm: async () => {
-                        try {
-                            await friendsService.removeFriend(Number(id));
-                            showModal({
-                                title: "Removido",
-                                message: "Amizade desfeita.",
-                                type: "success",
-                                onConfirm: () => {
-                                    // Recarrega a tela de ranking para atualizar a lista
-                                    navigate('leaderboard'); 
-                                }
-                            });
-                        } catch (error: any) {
-                            showModal({
-                                title: "Erro",
-                                message: error.message,
-                                type: "danger"
-                            });
-                        }
-                    }
-                });
-            }
-        }
-    });
+			if (id && nick) {
+				showModal({
+					title: "Remover Amigo",
+					message: `Tem certeza que deseja remover ${nick} dos amigos?`,
+					type: "danger",
+					confirmText: "Remover",
+					cancelText: "Cancelar",
+					onConfirm: async () => {
+						try {
+							await friendsService.removeFriend(Number(id));
+							showModal({
+								title: "Removido",
+								message: "Amizade desfeita.",
+								type: "success",
+								onConfirm: () => {
+									navigate('leaderboard');
+								}
+							});
+						} catch (error: any) {
+							showModal({
+								title: "Erro",
+								message: error.message,
+								type: "danger"
+							});
+						}
+					}
+				});
+			}
+		}
+	});
 }

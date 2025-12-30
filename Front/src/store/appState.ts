@@ -29,6 +29,7 @@ export interface User {
 	gamesWinned?: number;
 	gamesLosed?: number;
 	gamesPlayed?: number;
+	winRate?: number;
 }
 
 interface State {

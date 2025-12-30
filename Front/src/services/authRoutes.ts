@@ -80,7 +80,6 @@ interface LogoutResponse {
     message?: string;
 }
 
-// --- 1. Interface Adicionada ---
 interface DeleteAccountResponse {
     message: string;
 }

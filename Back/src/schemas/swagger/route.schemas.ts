@@ -201,8 +201,6 @@ export const logoutRouteSchema = {
     }
 } as const
 
-// --- Schemas de Gerenciamento de 2FA ---
-
 export const setup2FARouteSchema = {
     tags: ['auth'],
     summary: 'Iniciar configuração 2FA',

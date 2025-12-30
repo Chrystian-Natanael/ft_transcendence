@@ -18,24 +18,24 @@ import { PlayerController } from './database/controllers/player.controller'
 dotenv.config()
 
 declare module 'fastify' {
-	interface FastifyJWT {
-		payload: {
-			id: number
-			email: string
-			nick: string
-			isAnonymous: boolean
-			gang: string
-			temp2FA?: boolean
-		}
-		user: {
-			id: number
-			email: string
-			nick: string
-			isAnonymous: boolean
-			gang: string
-			temp2FA?: boolean
-		}
-	}
+    interface FastifyJWT {
+        payload: {
+            id: number
+            email: string
+            nick: string
+            isAnonymous: boolean
+            gang: string
+            temp2FA?: boolean
+        }
+        user: {
+            id: number
+            email: string
+            nick: string
+            isAnonymous: boolean
+            gang: string
+            temp2FA?: boolean
+        }
+    }
 }
 
 const app = fastify({ logger: false })
@@ -44,41 +44,38 @@ let waitingPlayer: Socket | null = null
 
 const activeMatches: Map<string, PongMatch> = new Map()
 
-// Configuração do CORS
 app.register(cors, {
-	origin: '*',
-	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization']
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 })
 
 app.register(jwt, { secret: process.env.JWT_SECRET || 'JWT_SECRET' })
 app.register(swaggerPlugin)
 
 
-// --- DECORATORS DE AUTENTICAÇÃO ---
 app.decorate('authenticate', async function (req: FastifyRequest, reply: FastifyReply) {
-	try {
-		await req.jwtVerify()
-		if (req.user.temp2FA) {
-			return reply.code(401).send({ error: 'Token temporário. Complete o 2FA.' })
-		}
-	} catch (err) {
-		return reply.code(401).send({ error: 'Token Inválido ou Expirado' })
-	}
+    try {
+        await req.jwtVerify()
+        if (req.user.temp2FA) {
+            return reply.code(401).send({ error: 'Token temporário. Complete o 2FA.' })
+        }
+    } catch (err) {
+        return reply.code(401).send({ error: 'Token Inválido ou Expirado' })
+    }
 })
 
 app.decorate('authenticate2FA', async function (req: FastifyRequest, reply: FastifyReply) {
-	try {
-		await req.jwtVerify()
-		if (!req.user.temp2FA) {
-			return reply.code(401).send({ error: 'Token inválido para etapa 2FA' })
-		}
-	} catch (err) {
-		return reply.code(401).send({ error: 'Token Inválido' })
-	}
+    try {
+        await req.jwtVerify()
+        if (!req.user.temp2FA) {
+            return reply.code(401).send({ error: 'Token inválido para etapa 2FA' })
+        }
+    } catch (err) {
+        return reply.code(401).send({ error: 'Token Inválido' })
+    }
 })
 
-// --- REGISTRO DE ROTAS ---
 app.register(zodValidator)
 
 app.register(authRoutes, { prefix: '/auth' })
@@ -86,158 +83,141 @@ app.register(friendsRoutes, { prefix: '/friends' })
 app.register(leaderboardRoutes, { prefix: '/leaderboards' })
 app.register(usersRoutes, { prefix: '/users' })
 
-
-// --- INICIALIZAÇÃO DO SERVIDOR E SOCKET.IO ---
 const start = async () => {
-	try {
+    try {
 
-		const io = new Server(app.server, {
-			cors: {
-				origin: '*',
-				methods: ['GET', 'POST']
-			}
-		})
-		app.register(gameRoutes, { prefix: '/game', io: io })
-		await app.ready()
+        const io = new Server(app.server, {
+            cors: {
+                origin: '*',
+                methods: ['GET', 'POST']
+            }
+        })
+        app.register(gameRoutes, { prefix: '/game', io: io })
+        await app.ready()
 
-		io.on('connection', async (socket: Socket) => {
-			console.log(`\n[SOCKET] Nova conexão recebida: ${socket.id}`);
+        io.use(async (socket, next) => {
+            const token = socket.handshake.auth.token;
 
-			const tokenRecebido = socket.handshake.auth.token;
-			console.log(`[SOCKET] Token recebido:`, tokenRecebido ? "Sim (Ocultado)" : "NÃO RECEBIDO (Undefined)");
+            if (!token) return next(new Error("Authentication error: No token"));
 
-			let userData: any = {};
+            try {
+                const decoded = app.jwt.decode(token) as any;
 
-			try {
-				if (tokenRecebido) {
-					const decoded = app.jwt.decode(tokenRecebido) as any;
-					if (decoded && decoded.id) {
-						const userFromDb = await PlayerController.findById(decoded.id);
+                if (decoded && decoded.id) {
+                    const userFromDb = await PlayerController.findById(decoded.id);
 
-						if (userFromDb) {
-							userData = {
-								id: userFromDb.id,
-								nick: userFromDb.nick,
-								avatar: userFromDb.avatar || '',
-								skin: userFromDb.gang === 'potatoes' ? 'potato' : 'tomato',
-								gang: userFromDb.gang
-							};
-						}
-					}
-				}
-			} catch (e) {
-				console.error(`[SOCKET] Erro ao decodificar token:`, e);
-			}
+                    if (userFromDb) {
+                        socket.data = {
+                            id: userFromDb.id,
+                            nick: userFromDb.nick,
+                            avatar: userFromDb.avatar || '',
+                            gameAvatar: userFromDb.avatar || '',
+                            skin: userFromDb.gang === 'potatoes' ? 'potato' : 'tomato',
+                            gang: userFromDb.gang,
+                            socketId: socket.id
+                        };
+                        return next();
+                    }
+                }
+                return next(new Error("Authentication error: User not found"));
+            } catch (e) {
+                console.error("Socket Auth Error:", e);
+                return next(new Error("Authentication error"));
+            }
+        });
 
-			socket.data = { ...userData, socketId: socket.id };
+        io.on('connection', (socket: Socket) => {
 
+            socket.on('joinGame', (data: { roomId: string }) => {
+                const roomId = data.roomId;
 
-			// ---------------------------------------------------------
-			// EVENTO 1: Entrar em Sala Específica (Ranked ou Convite)
-			// O frontend emite isso após receber o 'roomId' da API HTTP
-			// ---------------------------------------------------------
-			socket.on('joinGame', (data: { roomId: string }) => {
-				const roomId = data.roomId;
-				console.log(`[SOCKET] ${socket.data.nick} entrando na sala: ${roomId}`); // LOG NOVO
+                socket.join(roomId);
 
-				socket.join(roomId);
+                const room = io.sockets.adapter.rooms.get(roomId);
 
-				const room = io.sockets.adapter.rooms.get(roomId);
+                if (room) {
 
-				if (room) {
-					console.log(`[SOCKET] Sala ${roomId} agora tem ${room.size} jogadores.`);
+                    if (room.size === 2) {
+                        console.log(`[GAME START] Iniciando partida na sala ${roomId}`);
+                        const [id1, id2] = Array.from(room);
 
-					if (room.size === 2) {
-						console.log(`[GAME START] Iniciando partida na sala ${roomId}`);
-						const [id1, id2] = Array.from(room);
+                        const p1Socket = io.sockets.sockets.get(id1);
+                        const p2Socket = io.sockets.sockets.get(id2);
 
-						const p1Socket = io.sockets.sockets.get(id1);
+                        if (p1Socket && p2Socket) {
+                            const isRanked = roomId.startsWith('ranked_');
+                            console.log(`[GAME] Tipo: ${isRanked ? 'Ranked' : 'Casual'}`);
 
-						const p2Socket = io.sockets.sockets.get(id2);
+                            const match = new PongMatch(
+                                io,
+                                roomId,
+                                p1Socket.data,
+                                p2Socket.data,
+                                isRanked
+                            );
 
-						if (p1Socket && p2Socket) {
-							console.log(`Iniciando Partida Específica [${roomId}]`);
+                            activeMatches.set(p1Socket.id, match);
+                            activeMatches.set(p2Socket.id, match);
+                        }
+                    } else {
+                        console.log(`[SOCKET] Aguardando segundo jogador...`);
+                    }
+                } else {
+                    console.log(`[SOCKET] Erro crítico: Sala ${roomId} não existe após join.`);
+                }
+            });
 
-							const isRanked = roomId.startsWith('ranked_');
+            socket.on('joinQueue', () => {
+                if (waitingPlayer && waitingPlayer.id !== socket.id) {
+                    console.log(`Iniciando Casual (FIFO): ${waitingPlayer.data.nick} vs ${socket.data.nick}`);
 
-							const match = new PongMatch(
-								io,
-								roomId,
-								p1Socket.data,
-								p2Socket.data,
-								isRanked
-							);
+                    const roomId = `casual_fifo_${waitingPlayer.id}_${socket.id}`;
 
-							activeMatches.set(p1Socket.id, match);
-							activeMatches.set(p2Socket.id, match);
-						}
-					} else {
-						console.log(`[SOCKET] Aguardando segundo jogador...`);
-					}
-				} else {
-					console.log(`[SOCKET] Erro ao entrar na sala ${roomId}`);
-				}
-			});
+                    waitingPlayer.join(roomId);
+                    socket.join(roomId);
 
-			// ---------------------------------------------------------
-			// EVENTO 2: Fila Casual Rápida (FIFO)
-			// O frontend emite isso se clicar em "Jogar Casual" direto
-			// ---------------------------------------------------------
-			socket.on('joinQueue', () => {
-				if (waitingPlayer && waitingPlayer.id !== socket.id) {
-					console.log(`Iniciando Casual (FIFO): ${waitingPlayer.data.nick} vs ${socket.data.nick}`);
+                    const match = new PongMatch(
+                        io,
+                        roomId,
+                        waitingPlayer.data,
+                        socket.data,
+                        false
+                    );
 
-					const roomId = `casual_fifo_${waitingPlayer.id}_${socket.id}`;
+                    activeMatches.set(waitingPlayer.id, match);
+                    activeMatches.set(socket.id, match);
 
-					waitingPlayer.join(roomId);
-					socket.join(roomId);
+                    waitingPlayer = null;
+                } else {
+                    console.log('Entrou na fila casual rápida...');
+                    waitingPlayer = socket;
+                    socket.emit('matchStatus', 'waiting');
+                }
+            });
 
-					const match = new PongMatch(
-						io,
-						roomId,
-						waitingPlayer.data,
-						socket.data,
-						false
-					);
+            socket.on('disconnect', () => {
+                console.log(`[SOCKET] Cliente desconectado: ${socket.id}`);
 
-					activeMatches.set(waitingPlayer.id, match);
-					activeMatches.set(socket.id, match);
+                if (waitingPlayer === socket) {
+                    waitingPlayer = null;
+                }
 
-					waitingPlayer = null;
-				} else {
-					console.log('Entrou na fila casual rápida...');
-					waitingPlayer = socket;
-					socket.emit('matchStatus', 'waiting');
-				}
-			});
+                const match = activeMatches.get(socket.id);
+                if (match) {
+                    match.handleDisconnection(socket.id);
+                    activeMatches.delete(match.p1SocketId);
+                    activeMatches.delete(match.p2SocketId);
+                }
+            });
+        });
 
-			// ---------------------------------------------------------
-			// EVENTO 3: Desconexão
-			// ---------------------------------------------------------
-			socket.on('disconnect', () => {
-				console.log(`[SOCKET] Cliente desconectado: ${socket.id} (User ID: ${socket.data.id})`);
+        await app.listen({ port: 3333, host: '0.0.0.0' })
+        console.log('🚀 Servidor rodando em http://localhost:3333')
 
-				if (waitingPlayer === socket) {
-					waitingPlayer = null;
-				}
-
-				const match = activeMatches.get(socket.id);
-				if (match) {
-					match.handleDisconnection(socket.id);
-
-					activeMatches.delete(match.p1SocketId);
-					activeMatches.delete(match.p2SocketId);
-				}
-			});
-		});
-
-		await app.listen({ port: 3333, host: '0.0.0.0' })
-		console.log('🚀 Servidor rodando em http://localhost:3333')
-
-	} catch (err) {
-		app.log.error(err)
-		process.exit(1)
-	}
+    } catch (err) {
+        app.log.error(err)
+        process.exit(1)
+    }
 }
 
 start()

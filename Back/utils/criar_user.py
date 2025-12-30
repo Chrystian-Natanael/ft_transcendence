@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import requests
 import json
 from typing import Dict, Optional
@@ -151,11 +150,9 @@ def main():
 
     tokens = []
 
-    # Registrar e fazer login dos usuários
     for i, user_data in enumerate(users_data, 1):
         print_section(f"USUÁRIO {i}: {user_data['name']}")
 
-        # Registro
         print(f"{Color.WARNING}Registrando usuário...{Color.ENDC}")
         user = register_user(
             name=user_data['name'],
@@ -167,7 +164,6 @@ def main():
 
         if user:
             print()
-            # Login
             print(f"{Color.WARNING}Fazendo login...{Color.ENDC}")
             token = login_user(
                 identifier=user_data['email'],
@@ -181,11 +177,9 @@ def main():
                 })
 
                 print()
-                # Verificar token
                 print(f"{Color.WARNING}Verificando token...{Color.ENDC}")
                 get_user_info(token)
 
-    # Resumo final
     if tokens:
         print_section("RESUMO DOS TOKENS")
         for i, token_data in enumerate(tokens, 1):

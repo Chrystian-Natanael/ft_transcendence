@@ -1,17 +1,14 @@
+import { Form } from "@/components/Form";
+import { FriendRequestSchema } from "@/schemas/friends.schemas";
+import { validateForm } from "@/utils/formValidation";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 import { friendsService, type FriendsListResponse } from "../services/friendsRoutes";
-import { showModal } from "../utils/modalManager";
 import { state, type Route } from "../store/appState";
+import { showModal } from "../utils/modalManager";
+import bgPotatoes from '/assets/bg-login-potatoes.png';
+import bgTomatoes from '/assets/bg-login-tomatoes.png';
 
-//imgs
-import bgPotatoes from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
-import { Form } from "@/components/Form";
-import { validateForm } from "@/utils/formValidation";
-import { FriendRequestSchema } from "@/schemas/friends.schemas";
-
-// --- TIPOS ---
 interface Friend {
 	id: number;
 	nick: string;
@@ -19,13 +16,11 @@ interface Friend {
 	isOnline: boolean;
 }
 
-// --- CONFIGURAÇÃO VISUAL ---
 const backgroundByGang = {
 	potatoes: bgPotatoes,
 	tomatoes: bgTomatoes,
 };
 
-// --- HELPER FUNCTIONS (Renderização de Itens) ---
 function formatNick(nick: string): string {
 	if (nick.length <= 20) return nick;
 	return nick.substring(0, 20) + '...';
@@ -47,20 +42,20 @@ function renderRequestItem(request: any): string {
 
 			<div class="flex gap-1 shrink-0">
 				${Button({
-					id: `btn-accept-${request.id}`,
-					variant: "ghost",
-					icon: "check",
-					className: "btn-request-action",
-					attributes: `data-action="accept" data-nick="${request.nick}" data-id="${request.id}"`
-				})}
+		id: `btn-accept-${request.id}`,
+		variant: "ghost",
+		icon: "check",
+		className: "btn-request-action",
+		attributes: `data-action="accept" data-nick="${request.nick}" data-id="${request.id}"`
+	})}
 
 				${Button({
-					id: `btn-deny-${request.id}`,
-					variant: "ghost",
-					icon: "x",
-					className: "btn-request-action",
-					attributes: `data-action="decline" data-nick="${request.nick}" data-id="${request.id}"`
-				})}
+		id: `btn-deny-${request.id}`,
+		variant: "ghost",
+		icon: "x",
+		className: "btn-request-action",
+		attributes: `data-action="decline" data-nick="${request.nick}" data-id="${request.id}"`
+	})}
 			</div>
 		</div>
 	`;
@@ -90,24 +85,21 @@ function renderFriendItem(friend: Friend): string {
 
 			<div class="opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
 				${Button({
-					id: `btn-friend-remove-${friend.id}`,
-					title: "Remover Amigo",
-					variant: "ghost",
-					icon: "trash",
-					className: "btn-friend-remove",
-					attributes: `data-id="${friend.id}" data-name="${friend.nick}"`
-				})}
+		id: `btn-friend-remove-${friend.id}`,
+		title: "Remover Amigo",
+		variant: "ghost",
+		icon: "trash",
+		className: "btn-friend-remove",
+		attributes: `data-id="${friend.id}" data-name="${friend.nick}"`
+	})}
 			</div>
 		</div>
 	`;
 }
 
-// --- GERAÇÃO DO HTML (Async) ---
 export async function getFriendsHtml() {
 	const userGang = state.user?.gang || 'potatoes';
 	const isPotato = userGang === 'potatoes';
-
-	// Estilos dinâmicos
 	const headerColor = isPotato ? 'text-yellow-500' : 'text-red-500';
 	const titleDropShadow = isPotato ? 'drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]' : 'drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]';
 	const backgroundImage = backgroundByGang[userGang];
@@ -117,7 +109,6 @@ export async function getFriendsHtml() {
 	let requestscount: number = 0;
 	let requestsListHtml = '';
 
-	// 1. Carregar Amigos
 	try {
 		const friendsList = await friendsService.listFriends();
 		const mappedFriends = friendsList.map((response: FriendsListResponse): Friend => ({
@@ -141,7 +132,6 @@ export async function getFriendsHtml() {
 		friendsListHtml = `<div class="text-red-400 text-center">Erro ao carregar amigos.</div>`;
 	}
 
-	// 2. Carregar Solicitações
 	try {
 		const incomingRequests = await friendsService.listIncomingRequests();
 		requestscount = incomingRequests.length;
@@ -155,7 +145,6 @@ export async function getFriendsHtml() {
 		requestsListHtml = `<div class="text-red-400 text-center text-sm">Erro ao carregar.</div>`;
 	}
 
-	// Adicionei um ID no container principal para delegar eventos: id="friends-view-root"
 	return `
 		<img src="${backgroundImage}" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
 
@@ -166,11 +155,11 @@ export async function getFriendsHtml() {
 				</h2>
 				<div class="self-end sm:self-auto">
 					${Button({
-						id: "btn-friends-back",
-						text: "← VOLTAR",
-						variant: "ghost",
-						className: "w-auto min-w-[120px] max-w-[200px]",
-					})}
+		id: "btn-friends-back",
+		text: "← VOLTAR",
+		variant: "ghost",
+		className: "w-auto min-w-[120px] max-w-[200px]",
+	})}
 				</div>
 			</div>
 
@@ -185,24 +174,24 @@ export async function getFriendsHtml() {
 						<p class="text-gray-400 text-xs md:text-sm mb-3 md:mb-4">Busque pelo nick exato para enviar um convite.</p>
 
 						${Form({
-							id: "form-friends-add",
-							className: "flex flex-col gap-3 md:gap-4",
-							children: `
+		id: "form-friends-add",
+		className: "flex flex-col gap-3 md:gap-4",
+		children: `
 								${Input({
-									id: "input-friends-add",
-									placeholder: "Nick do usuário...",
-									type: "text",
-									attributes: 'required autocomplete="off"'
-								})}
+			id: "input-friends-add",
+			placeholder: "Nick do usuário...",
+			type: "text",
+			attributes: 'required autocomplete="off"'
+		})}
 
 								${Button({
-									id: "btn-friends-add",
-									text: "Adicionar +",
-									title: "Enviar solicitação de amizade",
-									attributes: 'type="submit"'
-								})}
+			id: "btn-friends-add",
+			text: "Adicionar +",
+			title: "Enviar solicitação de amizade",
+			attributes: 'type="submit"'
+		})}
 							`
-						})}
+	})}
 					</div>
 
 					<div class="bg-slate-900/60 backdrop-blur-md p-4 md:p-6 rounded-xl border border-white/10 shadow-xl flex-1 flex flex-col min-h-[300px] lg:min-h-0">
@@ -241,23 +230,17 @@ export async function getFriendsHtml() {
 	`;
 }
 
-// --- EVENTOS (Controller) ---
 export function setupFriendsEvents(navigate: (route: Route) => void) {
-
-	// 1. Navegação Voltar
 	document.getElementById('btn-friends-back')?.addEventListener('click', () => {
 		navigate('dashboard');
 	});
 
-	// 2. Adicionar Amigo
 	const formAddFriend = document.getElementById('form-friends-add') as HTMLFormElement;
 	formAddFriend?.addEventListener('submit', async (e) => {
 		e.preventDefault();
 
 		const input = document.getElementById('input-friends-add') as HTMLInputElement;
 		const nick = input?.value;
-
-		// Validação com schema
 		const formData = { nick };
 		const validation = validateForm(FriendRequestSchema, formData);
 
@@ -279,7 +262,7 @@ export function setupFriendsEvents(navigate: (route: Route) => void) {
 				type: "success",
 				confirmText: "OK"
 			});
-			input.value = ''; // Limpar input
+			input.value = '';
 		} catch (e: any) {
 			console.error('Erro capturado:', e);
 			const errorMessage = e.message || e.response?.data?.error || `Não foi possível convidar ${nick}`;
@@ -292,15 +275,11 @@ export function setupFriendsEvents(navigate: (route: Route) => void) {
 		}
 	});
 
-	// 3. Delegação de Eventos (Aceitar/Recusar/Remover)
-	// Usamos um listener no container principal para evitar múltiplos listeners globais
 	const viewRoot = document.getElementById('friends-view-root');
 
 	if (viewRoot) {
 		viewRoot.addEventListener('click', async (e) => {
 			const target = e.target as HTMLElement;
-
-			// --- AÇÃO DE SOLICITAÇÃO (Aceitar/Recusar) ---
 			const requestBtn = target.closest('.btn-request-action') as HTMLElement;
 			if (requestBtn) {
 				const nick = requestBtn.getAttribute('data-nick');
@@ -318,7 +297,7 @@ export function setupFriendsEvents(navigate: (route: Route) => void) {
 							message: response.message,
 							type: "success",
 							confirmText: "OK",
-							onConfirm: () => navigate('friends') // Recarrega a tela
+							onConfirm: () => navigate('friends')
 						});
 					} catch (error: any) {
 						showModal({
@@ -329,10 +308,9 @@ export function setupFriendsEvents(navigate: (route: Route) => void) {
 						});
 					}
 				}
-				return; // Para não processar mais nada
+				return;
 			}
 
-			// --- AÇÃO DE REMOVER AMIGO ---
 			const removeBtn = target.closest('.btn-friend-remove') as HTMLElement;
 			if (removeBtn) {
 				const friendId = removeBtn.getAttribute('data-id');
@@ -353,7 +331,7 @@ export function setupFriendsEvents(navigate: (route: Route) => void) {
 									message: response.message,
 									type: "success",
 									confirmText: "OK",
-									onConfirm: () => navigate('friends') // Recarrega a tela
+									onConfirm: () => navigate('friends')
 								});
 							} catch (error: any) {
 								showModal({

@@ -1,34 +1,27 @@
-// src/views/profile.ts
-import { getAvatarSrcFromId, getDefaultAvatar, showAvatarModal, type Gang } from "@/components/AvatarOptions";
+import { getAvatarSrcFromId, showAvatarModal, type Gang } from "@/components/AvatarOptions";
+import { Form } from "@/components/Form";
+import { nickSchema } from "@/schemas/common.schemas";
+import { profileService } from "@/services/profileRoutes";
+import { validateForm } from "@/utils/formValidation";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Input } from "../components/Input";
 import { saveState, state, type Route } from "../store/appState";
 import { showModal } from "../utils/modalManager";
+import bgPotatoes from '/assets/bg-login-potatoes.png';
+import bgTomatoes from '/assets/bg-login-tomatoes.png';
+import bgDefault from '/assets/bg-login.png';
 
-//imgs
-import { Form } from "@/components/Form";
-import { nickSchema } from "@/schemas/common.schemas";
-import { profileService } from "@/services/profileRoutes";
-import { validateForm } from "@/utils/formValidation";
-import bgPotatoes from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
-import bgDefault from '../assets/bg-login.png';
-
-// --- HELPER LOCAL ---
-const StatItem = (label: string, valueId: string, colorClass: string = "text-white", value: number) => `
+const StatItem = (label: string, valueId: string, value: number, colorClass: string = "text-white") => `
 	<div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center hover:border-white/10 transition">
 		<p class="text-xs text-gray-500 uppercase tracking-widest mb-1">${label}</p>
 		<p id="${valueId}" class="text-2xl font-bold ${colorClass}">${value}</p>
 	</div>
 `;
 
-// --- HTML ---
 export async function getProfileHtml() {
 	const user = state.user;
 	const selectedGang = (user?.gang || 'potatoes') as 'potatoes' | 'tomatoes';
-
-	// Ajuste de caminhos de assets (remove 'src' para funcionar no public)
 	const backgrounds = {
 		potatoes: bgPotatoes,
 		tomatoes: bgTomatoes,
@@ -39,7 +32,6 @@ export async function getProfileHtml() {
 
 	console.log("Rendering profile for gang:", selectedGang);
 
-	// Estilos dinâmicos
 	const headerColor = selectedGang === "tomatoes" ? "text-red-500" : selectedGang === "potatoes" ? "text-yellow-500" : "text-cyan-500";
 	const avatarBorder = selectedGang === "potatoes" ? "border-yellow-500" : selectedGang === "tomatoes" ? "border-red-500" : "border-cyan-500";
 	const titleGlow = selectedGang === "potatoes" ? "drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" : selectedGang === "tomatoes" ? "drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]" : "drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]";
@@ -48,6 +40,7 @@ export async function getProfileHtml() {
 
 	try {
 		const user = await profileService.getProfile();
+		console.log("Dados do usuário recebidos do serviço de perfil:", user);
 		state.user = {
 			id: user.id,
 			name: user.name,
@@ -62,6 +55,7 @@ export async function getProfileHtml() {
 			gamesWinned: user.gamesWinned,
 			gamesLosed: user.gamesLosed,
 			gamesPlayed: user.gamesPlayed,
+			winRate: user.winRate
 		};
 		saveState();
 	} catch (error) {
@@ -106,16 +100,16 @@ export async function getProfileHtml() {
 							<div>
 
 								${Form({
-									id: "form-profile",
-									children: `
+			id: "form-profile",
+			children: `
 										<label class="block text-sm text-gray-400 mb-2 ml-1">Nome de Exibição</label>
 										${Input({
-											id: "input-profile-nick",
-											value: `${nick}`,
-											className: "mb-8 bg-slate-800/50 border-white/10 focus:bg-black/60 text-lg"
-										})}
+				id: "input-profile-nick",
+				value: `${nick}`,
+				className: "mb-8 bg-slate-800/50 border-white/10 focus:bg-black/60 text-lg"
+			})}
 									`
-									})}
+		})}
 
 								<h3 class="text-lg text-white mb-4 font-bold flex items-center gap-2">
 									<span class="w-1.5 h-6 bg-purple-500 rounded-full inline-block shadow-[0_0_10px_#a855f7]"></span>
@@ -123,51 +117,35 @@ export async function getProfileHtml() {
 								</h3>
 
 								<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-									${StatItem("Jogos", "stat-games", "", state.user?.gamesPlayed || 0)}
-									${StatItem("Vitórias", "stat-wins", "", state.user?.gamesWinned || 0)}
-									${StatItem("Derrotas", "stat-losses", "", state.user?.gamesLosed || 0)}
-									${StatItem("Win Rate", "stat-wr", "", 0)}
+									${StatItem("Jogos", "stat-games", state.user?.gamesPlayed || 0)}
+									${StatItem("Vitórias", "stat-wins", state.user?.gamesWinned || 0)}
+									${StatItem("Derrotas", "stat-losses", state.user?.gamesLosed || 0)}
+									${StatItem("Win Rate (%)", "stat-wr", parseFloat((state.user?.winRate || 0).toPrecision(2)))}
 								</div>
 							</div>
 
 							<div class="mt-8 flex justify-end pt-6 border-t border-white/5">
 								${Button({
-									id: "btn-profile-save",
-									text: "Salvar Alterações",
-									variant: "primary",
-									className: "w-full md:w-auto md:px-12",
-									attributes: 'type="submit" form="form-profile"',
-								})}
+			id: "btn-profile-save",
+			text: "Salvar Alterações",
+			variant: "primary",
+			className: "w-full md:w-auto md:px-12",
+			attributes: 'type="submit" form="form-profile"',
+		})}
 								</div>
 							</div>
 						</div>
 							`
-							})}
+	})}
 		</div>
 	`;
 }
 
-// --- LÓGICA ---
 export function setupProfileEvents(navigate: (route: Route) => void) {
-
-	// 1. Preencher Stats (Simulação por enquanto)
-	// No futuro, isso virá do `state.user` ou de uma chamada `userService.getStats()`
-	const elGames = document.getElementById('stat-games');
-	const elWins = document.getElementById('stat-wins');
-	const elLosses = document.getElementById('stat-losses');
-	const elWr = document.getElementById('stat-wr');
-
-	if (elGames) elGames.innerText = state.user?.score?.toString() || "0";
-	if (elWins) elWins.innerText = "0"; // Placeholder
-	if (elLosses) elLosses.innerText = "0"; // Placeholder
-	if (elWr) elWr.innerText = "0%"; // Placeholder
-
-	// 2. Botão Voltar
 	document.getElementById('btn-profile-back')?.addEventListener('click', () => {
 		navigate('dashboard');
 	});
 
-	// 3. Salvar Alterações
 	const formUpdateProfile = document.getElementById('form-profile') as HTMLFormElement;
 	formUpdateProfile?.addEventListener('submit', async (e) => {
 		e.preventDefault();
@@ -198,7 +176,6 @@ export function setupProfileEvents(navigate: (route: Route) => void) {
 				localStorage.setItem('authToken', response.token);
 			}
 
-			// Atualizar estado global
 			if (state.user) {
 				state.user.nick = nick;
 				saveState();
@@ -220,7 +197,6 @@ export function setupProfileEvents(navigate: (route: Route) => void) {
 		}
 	});
 
-	// 4. Upload de Avatar (Mock Visual)
 	const profileImgContainer = document.querySelector('.group');
 
 	if (profileImgContainer) {

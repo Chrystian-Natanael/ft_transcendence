@@ -1,4 +1,3 @@
-// src/views/register.ts
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Form } from "../components/Form";
@@ -9,16 +8,11 @@ import { authService } from "../services/authRoutes";
 import { type Route } from "../store/appState";
 import { clearFormErrors, displayFormErrors, validateForm } from "../utils/formValidation";
 import { showModal } from "../utils/modalManager";
+import bgPotatoes from '/assets/bg-login-potatoes.png';
+import bgTomatoes from '/assets/bg-login-tomatoes.png';
+import bgDefault from '/assets/bg-login.png';
 
-//imgs
-import bgPotatoes from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
-import bgDefault from '../assets/bg-login.png';
-
-// Variável local de estado visual
 let theme: "potatoes" | "tomatoes" | "default" = "default";
-
-// --- HELPERS (Custom Select & Theme) ---
 
 function initCustomSelect(selectId: string, onChangeCallback?: (newValue: string) => void) {
 	const wrapper = document.getElementById(`wrapper-${selectId}`);
@@ -30,12 +24,10 @@ function initCustomSelect(selectId: string, onChangeCallback?: (newValue: string
 
 	if (!wrapper || !trigger || !dropdown || !hiddenInput) return;
 
-	// Toggle Abrir/Fechar
 	trigger.addEventListener('click', (e) => {
 		e.stopPropagation();
 		const isHidden = dropdown.classList.contains('hidden');
 
-		// Fecha outros dropdowns
 		document.querySelectorAll('[id^="dropdown-"]').forEach(el => el.classList.add('hidden'));
 		document.querySelectorAll('[id^="trigger-"] svg').forEach(el => el.classList.remove('rotate-180'));
 
@@ -50,7 +42,6 @@ function initCustomSelect(selectId: string, onChangeCallback?: (newValue: string
 		}
 	});
 
-	// Selecionar Opção
 	wrapper.querySelectorAll('.custom-option').forEach(option => {
 		option.addEventListener('click', (e) => {
 			e.stopPropagation();
@@ -58,7 +49,6 @@ function initCustomSelect(selectId: string, onChangeCallback?: (newValue: string
 			const text = option.textContent?.trim() || "";
 
 			hiddenInput.value = value;
-			// Dispara evento 'change' manual para o formulário detectar
 			hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
 
 			if (labelSpan) {
@@ -75,7 +65,6 @@ function initCustomSelect(selectId: string, onChangeCallback?: (newValue: string
 		});
 	});
 
-	// Fechar ao clicar fora
 	document.addEventListener('click', (e) => {
 		if (!wrapper.contains(e.target as Node)) {
 			dropdown.classList.add('hidden');
@@ -96,18 +85,16 @@ function updateRegisterBg() {
 	const val = selectGang.value;
 
 	if (val === 'potatoes') {
-		registerBg.src = bgPotatoes; // <--- Usa a variável importada
+		registerBg.src = bgPotatoes;
 		theme = "potatoes";
 	} else if (val === 'tomatoes') {
-		registerBg.src = bgTomatoes; // <--- Usa a variável importada
+		registerBg.src = bgTomatoes;
 		theme = "tomatoes";
 	} else {
-		registerBg.src = bgDefault;  // <--- Usa a variável importada
+		registerBg.src = bgDefault;
 		theme = "default";
 	}
 
-	// Nota: Substituir outerHTML remove event listeners diretos.
-	// Por isso usamos Event Delegation no setupRegisterEvents para o botão Voltar.
 	if (buttonSubmit) {
 		buttonSubmit.outerHTML = Button({
 			id: "btn-register-submit",
@@ -125,14 +112,12 @@ function updateRegisterBg() {
 			variant: "secondary",
 			theme: theme,
 			className: "w-1/3",
-			attributes: 'type="button"' // Importante para não submeter o form
+			attributes: 'type="button"'
 		});
 	}
 }
 
-// --- HTML ---
 export function getRegisterHtml() {
-	// Inicialização assíncrona dos componentes de UI
 	setTimeout(() => {
 		initCustomSelect('select-register-gang', () => {
 			updateRegisterBg();
@@ -143,109 +128,101 @@ export function getRegisterHtml() {
 		<img id="register-bg" src="${bgDefault}" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30 transition-opacity duration-500" />
 		<div class="min-h-screen flex justify-center items-center p-5">
 			${Card({
-				className: "max-w-xl w-full animate-fade-in relative z-10",
-				children: `
+		className: "max-w-xl w-full animate-fade-in relative z-10",
+		children: `
 					<h2 class="text-cyan-500 mb-2 text-4xl font-bold drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">Criar Conta</h2>
 					<p class="text-gray-400 text-lg mb-8">Junte-se à revolução do Pong.</p>
 
 					<div>
 						${Form({
-							id: "form-register",
-							className: "space-y-4",
-							children: `
+			id: "form-register",
+			className: "space-y-4",
+			children: `
 								<div>
 									${Input({
-										id: "input-register-name",
-										placeholder: "Nome Completo",
-										attributes: 'required autocomplete="name"'
-									})}
+				id: "input-register-name",
+				placeholder: "Nome Completo",
+				attributes: 'required autocomplete="name"'
+			})}
 								</div>
 
 								<div>
 									${Input({
-										id: "input-register-nick",
-										placeholder: "Nick (Usuário)",
-										attributes: 'required autocomplete="username"'
-									})}
+				id: "input-register-nick",
+				placeholder: "Nick (Usuário)",
+				attributes: 'required autocomplete="username"'
+			})}
 								</div>
 
 								<div>
 									${Input({
-										id: "input-register-email",
-										type: "email",
-										placeholder: "Email",
-										attributes: 'required autocomplete="email"'
-									})}
+				id: "input-register-email",
+				type: "email",
+				placeholder: "Email",
+				attributes: 'required autocomplete="email"'
+			})}
 								</div>
 
 								<div>
 									${Input({
-										id: "input-register-password",
-										type: "password",
-										placeholder: "Senha",
-										attributes: 'required autocomplete="new-password"'
-									})}
+				id: "input-register-password",
+				type: "password",
+				placeholder: "Senha",
+				attributes: 'required autocomplete="new-password"'
+			})}
 								</div>
 
 								<div>
 									${Select({
-										id: "select-register-gang",
-										placeholder: "Escolha sua aliança...",
-										options: [
-											{ value: "potatoes", label: "🥔 Gangue das Batatas" },
-											{ value: "tomatoes", label: "🍅 Gangue dos Tomates" }
-										]
-									})}
+				id: "select-register-gang",
+				placeholder: "Escolha sua aliança...",
+				options: [
+					{ value: "potatoes", label: "🥔 Gangue das Batatas" },
+					{ value: "tomatoes", label: "🍅 Gangue dos Tomates" }
+				]
+			})}
 								</div>
 
 								<div class="flex flex-row-reverse gap-4 mt-8" id="register-buttons-container">
 									${Button({
-										id: "btn-register-submit",
-										text: "Cadastrar",
-										variant: "primary",
-										className: "w-2/3",
-										attributes: 'type="submit"'
-									})}
+				id: "btn-register-submit",
+				text: "Cadastrar",
+				variant: "primary",
+				className: "w-2/3",
+				attributes: 'type="submit"'
+			})}
 									${Button({
-										id: "btn-register-back",
-										text: "Voltar",
-										variant: "secondary",
-										className: "w-1/3",
-										attributes: 'type="button"'
-									})}
+				id: "btn-register-back",
+				text: "Voltar",
+				variant: "secondary",
+				className: "w-1/3",
+				attributes: 'type="button"'
+			})}
 								</div>
 							`
-						})}
+		})}
 					</div>
 
 					<p id="register-error" class="text-red-400 text-center mt-4 hidden font-bold"></p>
 				`
-			})}
+	})}
 		</div>
 	`;
 }
 
-// --- LÓGICA ---
 export function setupRegisterEvents(navigate: (route: Route) => void) {
 	const form = document.getElementById('form-register') as HTMLFormElement;
-
-	// 1. Event Delegation para o botão Voltar
-	// Como o updateRegisterBg substitui o HTML dos botões, não podemos adicionar o listener
-	// diretamente no elemento ID, pois ele é destruído. Adicionamos no form.
 	form?.addEventListener('click', (e) => {
 		const target = e.target as HTMLElement;
-		// Verifica se clicou no botão voltar ou dentro dele
 		if (target.id === 'btn-register-back' || target.closest('#btn-register-back')) {
-			e.preventDefault(); // Previne qualquer comportamento padrão
+			e.preventDefault();
 			navigate('login');
 		}
 	});
 
-	// 2. Submit do Formulário
 	form?.addEventListener('submit', async (e) => {
 		e.preventDefault();
 
-		// Coleta dados
 		const formData = {
 			name: (document.getElementById('input-register-name') as HTMLInputElement).value,
 			nick: (document.getElementById('input-register-nick') as HTMLInputElement).value,
@@ -254,7 +231,6 @@ export function setupRegisterEvents(navigate: (route: Route) => void) {
 			gang: (document.getElementById('select-register-gang') as HTMLInputElement).value
 		};
 
-		// Validação Zod
 		const validation = validateForm(registerSchema, formData);
 
 		if (!validation.success) {

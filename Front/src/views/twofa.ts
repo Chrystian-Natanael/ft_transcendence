@@ -1,24 +1,20 @@
-// src/views/twofa.ts
+import { Form } from "@/components/Form";
+import { enable2FASchema } from "@/schemas/auth.schemas";
+import { validateForm } from "@/utils/formValidation";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Input } from "../components/Input";
 import { authService } from "../services/authRoutes";
-import { showModal } from "../utils/modalManager";
 import { state, type Route } from "../store/appState";
-
-//imgs
-import bgPotatoes from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
-import { Form } from "@/components/Form";
-import { validateForm } from "@/utils/formValidation";
-import { enable2FASchema } from "@/schemas/auth.schemas";
+import { showModal } from "../utils/modalManager";
+import bgPotatoes from '/assets/bg-login-potatoes.png';
+import bgTomatoes from '/assets/bg-login-tomatoes.png';
 
 const backgroundByGang = {
 	potatoes: bgPotatoes,
 	tomatoes: bgTomatoes,
 };
 
-// --- HELPER LOCAL (Toast) ---
 function showCopyToast() {
 	const toast = document.createElement('div');
 	toast.innerText = "Copiado!";
@@ -38,7 +34,6 @@ function showCopyToast() {
 	}, 2000);
 }
 
-// --- HELPER LOCAL (Backup Codes) ---
 function formatBackupCodesHtml(codes: string[]): string {
 	const user = state.user;
 	const gang = user?.gang || 'potatoes';
@@ -79,7 +74,6 @@ function formatBackupCodesHtml(codes: string[]): string {
 	`;
 }
 
-// --- HTML ---
 export function get2FAHtml(data: { qrCodeUrl: string; secret: string; }) {
 	const user = state.user;
 	const gang = user?.gang || 'potatoes';
@@ -97,8 +91,8 @@ export function get2FAHtml(data: { qrCodeUrl: string; secret: string; }) {
 
 		<div class="min-h-screen flex justify-center items-center p-5">
 			${Card({
-				className: `max-w-md w-full text-center bg-slate-900/40 backdrop-blur-md border ${cardBorder} ${cardShadow}`,
-				children: `
+		className: `max-w-md w-full text-center bg-slate-900/40 backdrop-blur-md border ${cardBorder} ${cardShadow}`,
+		children: `
 					<h2 class="${titleColor} ${titleGlow} mb-4 text-4xl font-bold">Ativar 2FA</h2>
 					<p class="text-gray-400 text-sm mb-6">Escaneie o QR Code com seu aplicativo autenticador e confirme com o código gerado.</p>
 
@@ -115,40 +109,37 @@ export function get2FAHtml(data: { qrCodeUrl: string; secret: string; }) {
 					</div>
 
 					${Form({
-						id: "form-2fa-enable",
-						className: "mb-6",
-						children: `
+			id: "form-2fa-enable",
+			className: "mb-6",
+			children: `
 							<label class="text-xs text-gray-400 font-bold uppercase mb-1 block">Código do autenticador</label>
 							${Input({
-								id: "input-2fa-code",
-								placeholder: "000 000",
-								className: `text-center text-3xl tracking-[0.5em] font-mono bg-slate-800/80 border border-white/10 focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.4)] py-4`
-							})}
+				id: "input-2fa-code",
+				placeholder: "000 000",
+				className: `text-center text-3xl tracking-[0.5em] font-mono bg-slate-800/80 border border-white/10 focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.4)] py-4`
+			})}
 						`
-					})}
+		})}
 
 					<div class="mb-6">
 
 					</div>
 
 					${Button({
-						id: "btn-2fa-send",
-						text: "Ativar 2FA",
-						variant: "primary",
-						theme: buttonTheme,
-						attributes: 'type="submit" form="form-2fa-enable"'
-					})}
+			id: "btn-2fa-send",
+			text: "Ativar 2FA",
+			variant: "primary",
+			theme: buttonTheme,
+			attributes: 'type="submit" form="form-2fa-enable"'
+		})}
 					${Button({ id: "btn-2fa-back", text: "Cancelar", variant: "ghost", className: "mt-4 text-sm" })}
 				`
-			})}
+	})}
 		</div>
 	`;
 }
 
-// --- LÓGICA ---
 export function setup2FAEvents(navigate: (route: Route) => void) {
-
-	// 1. Copiar Secret
 	document.getElementById('btn-2fa-copy')?.addEventListener('click', () => {
 		const secretInput = document.getElementById('input-2fa-secret') as HTMLInputElement;
 		navigator.clipboard.writeText(secretInput.value).then(() => {
@@ -162,12 +153,10 @@ export function setup2FAEvents(navigate: (route: Route) => void) {
 		}).catch(err => console.error('Falha ao copiar:', err));
 	});
 
-	// 2. Voltar
 	document.getElementById('btn-2fa-back')?.addEventListener('click', () => {
 		navigate('settings');
 	});
 
-	// 3. Confirmar 2FA
 	const form2faEnable = document.getElementById('form-2fa-enable') as HTMLFormElement;
 	form2faEnable?.addEventListener('submit', async (e) => {
 		e.preventDefault();

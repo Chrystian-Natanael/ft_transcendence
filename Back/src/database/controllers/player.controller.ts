@@ -3,7 +3,6 @@ import { Player } from '@prisma/client';
 import { prisma } from '../prisma';
 
 export class PlayerController {
-	// Create player
 	static async create(data: {
 		name: string;
 		nick: string;
@@ -21,7 +20,6 @@ export class PlayerController {
 		})
 	}
 
-	// Find by ID
 	static async findById(id: number): Promise<Player | null> {
 		return await prisma.player.findUnique({
 			where: { id },
@@ -35,21 +33,18 @@ export class PlayerController {
 		})
 	}
 
-	// Find by nick
 	static async findByNick(nick: string): Promise<Player | null> {
 		return await prisma.player.findUnique({
 			where: { nick },
 		})
 	}
 
-	// Find by email
 	static async findByEmail(email: string): Promise<Player | null> {
 		return await prisma.player.findUnique({
 			where: { email },
 		})
 	}
 
-	// Find by email or nick
 	static async findByIdentifier(identifier: string): Promise<Player | null> {
 		return await prisma.player.findFirst({
 			where: {
@@ -62,7 +57,6 @@ export class PlayerController {
 		})
 	}
 
-	// Update player
 	static async update(id: number, data: Partial<Player>): Promise<Player> {
 		return await prisma.player.update({
 			where: { id },
@@ -70,14 +64,12 @@ export class PlayerController {
 		})
 	}
 
-	// Delete player
 	static async delete(id: number): Promise<Player> {
 		return await prisma.player.delete({
 			where: { id },
 		})
 	}
 
-	// Update last activity
 	static async updateActivity(id: number): Promise<void> {
 		await prisma.player.update({
 			where: { id },
@@ -85,7 +77,6 @@ export class PlayerController {
 		})
 	}
 
-	// Add backup codes
 	static async addBackupCodes(playerId: number, codes: string[]): Promise<void> {
 		await prisma.backupCode.createMany({
 			data: codes.map(code => ({
@@ -95,7 +86,6 @@ export class PlayerController {
 		})
 	}
 
-	// Remove used backup code
 	static async removeBackupCode(playerId: number, code: string): Promise<void> {
 		const backupCode = await prisma.backupCode.findFirst({
 			where: { idPlayer: playerId, code },
@@ -108,13 +98,12 @@ export class PlayerController {
 		}
 	}
 
-	// Get backup codes
 	static async getBackupCodes(playerId: number): Promise<string[]> {
 		const codes = await prisma.backupCode.findMany({
 			where: { idPlayer: playerId },
 			select: { code: true },
 		})
-		return codes.map(c => c.code)
+		return codes.map((c: { code: string }) => c.code)
 	}
 
 	static async getGameStats(playerId: number): Promise<{
@@ -133,7 +122,6 @@ export class PlayerController {
 		}
 	}
 
-	// Increment games won
 	static async incrementGamesWon(playerId: number, points: number): Promise<void> {
 		await prisma.player.update({
 			where: { id: playerId },
@@ -145,7 +133,6 @@ export class PlayerController {
 		})
 	}
 
-	// Increment games lost
 	static async incrementGamesLost(playerId: number, points: number): Promise<void> {
 		await prisma.player.update({
 			where: { id: playerId },

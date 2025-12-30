@@ -1,5 +1,3 @@
-// Back/src/types/game.ts
-
 export const PowerUpType = {
     BIG_PADDLE: 'BIG_PADDLE',
     SHIELD: 'SHIELD',
@@ -11,21 +9,21 @@ export type PowerUpType = typeof PowerUpType[keyof typeof PowerUpType];
 export type PlayerSkin = 'potato' | 'tomato' | 'ai';
 
 export interface PlayerState {
-  id: string;      // Socket ID
-  y: number;       // Posição vertical (0 a 100 ou pixels)
+  id: string;
+  y: number;
   score: number;
-  height: number;  // Altura da raquete
-  shield: boolean; // Se tem barreira ativada
+  height: number;
+  shield: boolean;
   skin: PlayerSkin;
-  nick: string;    // Nome do jogador para exibir
-  avatar?: string; // URL da foto do jogador
-  gameAvatar?: string // Avatar de jogo
+  nick: string;
+  avatar?: string;
+  gameAvatar?: string
 }
 
 export interface GameState {
-  ball: { 
-    x: number; 
-    y: number; 
+  ball: {
+    x: number;
+    y: number;
   };
   player1: PlayerState;
   player2: PlayerState;

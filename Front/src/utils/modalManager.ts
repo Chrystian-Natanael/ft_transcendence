@@ -23,14 +23,11 @@ export function showModal({
 	if (!layer)
 		return;
 
-	// 1. Injeta o HTML do Modal
 	layer.innerHTML = ModalComponent({ title, message, type });
 
-	// 2. Injeta os botões na área de ações
 	const actionsContainer = document.getElementById("modal-actions");
 
 	if (actionsContainer) {
-		// Botão Cancelar (Se existir texto)
 		if (cancelText) {
 			const cancelBtnHTML = Button({
 				id: "modal-btn-cancel",
@@ -41,7 +38,6 @@ export function showModal({
 			actionsContainer.insertAdjacentHTML('beforeend', cancelBtnHTML);
 		}
 
-		// Botão Confirmar
 		const confirmBtnHTML = Button({
 			id: "modal-btn-confirm",
 			text: confirmText,
@@ -51,23 +47,19 @@ export function showModal({
 		actionsContainer.insertAdjacentHTML('beforeend', confirmBtnHTML);
 	}
 
-	// 3. Adiciona os Event Listeners (Callbacks)
-
-	// Fechar / Cancelar
 	document.getElementById("modal-btn-cancel")?.addEventListener("click", () => {
 		closeModal();
 	});
 
-	// Confirmar
 	document.getElementById("modal-btn-confirm")?.addEventListener("click", () => {
 		closeModal();
 		if (onConfirm)
-			onConfirm(); // Executa a ação (ex: ir para login)
+			onConfirm();
 	});
 }
 
 function closeModal() {
 	const layer = document.getElementById("modal-layer");
 	if (layer)
-		layer.innerHTML = ""; // Limpa o modal da tela
+		layer.innerHTML = "";
 }

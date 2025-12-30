@@ -1,20 +1,18 @@
-import potato1 from '../assets/Profile_images/Potato_default.jpg';
-import potato2 from '../assets/Profile_images/Potato_batata_inglesa.png';
-import potato3 from '../assets/Profile_images/Potato_hot_potato.jpg';
-import potato4 from '../assets/Profile_images/Potato_little_potato.png';
-import potato5 from '../assets/Profile_images/Potato_mage.png';
-import potato6 from '../assets/Profile_images/Potato_miss_potato.png';
-import potato7 from '../assets/Profile_images/Potato_sr_potato.png';
+import potato2 from '/assets/Profile_images/Potato_batata_inglesa.png';
+import potato1 from '/assets/Profile_images/Potato_default.jpg';
+import potato3 from '/assets/Profile_images/Potato_hot_potato.jpg';
+import potato4 from '/assets/Profile_images/Potato_little_potato.png';
+import potato5 from '/assets/Profile_images/Potato_mage.png';
+import potato6 from '/assets/Profile_images/Potato_miss_potato.png';
+import potato7 from '/assets/Profile_images/Potato_sr_potato.png';
 
-// Tomates
-import tomato1 from '../assets/Profile_images/Tomato_default.jpg';
-import tomato2 from '../assets/Profile_images/Tomato_ballerina.png';
-import tomato3 from '../assets/Profile_images/Tomato_bat.jpg';
-import tomato4 from '../assets/Profile_images/Tomato_green_tomato.png';
-import tomato5 from '../assets/Profile_images/Tomato_sinore_tomato.png';
-import tomato6 from '../assets/Profile_images/Tomato_Tomarillo.png';
+import tomato2 from '/assets/Profile_images/Tomato_ballerina.png';
+import tomato3 from '/assets/Profile_images/Tomato_bat.jpg';
+import tomato1 from '/assets/Profile_images/Tomato_default.jpg';
+import tomato4 from '/assets/Profile_images/Tomato_green_tomato.png';
+import tomato5 from '/assets/Profile_images/Tomato_sinore_tomato.png';
+import tomato6 from '/assets/Profile_images/Tomato_Tomarillo.png';
 
-// --- TIPOS ---
 export interface AvatarOption {
 	id: string;
 	src: string;
@@ -23,7 +21,6 @@ export interface AvatarOption {
 
 export type Gang = 'potatoes' | 'tomatoes';
 
-// --- REGISTRO DE AVATARES ---
 export const avatarsByGang: Record<Gang, AvatarOption[]> = {
 	potatoes: [
 		{ id: 'potato-1', src: potato1, alt: 'Batata 1' },
@@ -44,7 +41,6 @@ export const avatarsByGang: Record<Gang, AvatarOption[]> = {
 	],
 };
 
-// --- HELPERS ---
 export function getAvatarsForGang(gang: Gang): AvatarOption[] {
 	return avatarsByGang[gang] || [];
 }
@@ -58,7 +54,6 @@ export function getAvatarById(gang: Gang, id: string): AvatarOption | undefined 
 	return avatarsByGang[gang].find(avatar => avatar.id === id);
 }
 
-// --- ESTILOS POR GANGUE ---
 const gangStyles = {
 	potatoes: {
 		borderColor: 'border-yellow-500',
@@ -78,7 +73,6 @@ const gangStyles = {
 	},
 };
 
-// --- RENDERIZAR ITEM DE AVATAR ---
 function renderAvatarItem(avatar: AvatarOption, gang: Gang): string {
 	const styles = gangStyles[gang];
 
@@ -102,7 +96,6 @@ function renderAvatarItem(avatar: AvatarOption, gang: Gang): string {
 	`;
 }
 
-// --- GERAR HTML DO MODAL ---
 export function AvatarSelectionModal(gang: Gang): string {
 	const avatars = avatarsByGang[gang];
 	const styles = gangStyles[gang];
@@ -149,7 +142,6 @@ export function AvatarSelectionModal(gang: Gang): string {
 	`;
 }
 
-// --- FUNÇÃO PARA ABRIR O MODAL ---
 export function showAvatarModal(
 	gang: Gang,
 	onSelect: (avatarId: string, avatarSrc: string) => void
@@ -157,22 +149,18 @@ export function showAvatarModal(
 	const layer = document.getElementById('modal-layer');
 	if (!layer) return;
 
-	// Renderizar o modal
 	layer.innerHTML = AvatarSelectionModal(gang);
 
-	// Event: Cancelar
 	document.getElementById('btn-avatar-cancel')?.addEventListener('click', () => {
 		closeAvatarModal();
 	});
 
-	// Event: Clicar fora para fechar
 	document.getElementById('avatar-modal-backdrop')?.addEventListener('click', (e) => {
 		if (e.target === e.currentTarget) {
 			closeAvatarModal();
 		}
 	});
 
-	// Event: Selecionar avatar
 	const avatarButtons = layer.querySelectorAll('.avatar-option');
 	avatarButtons.forEach(btn => {
 		btn.addEventListener('click', (e) => {
@@ -188,7 +176,6 @@ export function showAvatarModal(
 	});
 }
 
-// --- FUNÇÃO PARA FECHAR O MODAL ---
 export function closeAvatarModal(): void {
 	const layer = document.getElementById('modal-layer');
 	if (layer) {
@@ -196,20 +183,15 @@ export function closeAvatarModal(): void {
 	}
 }
 
-
 export function getAvatarSrcFromId(gang: Gang, idOrPath: string | undefined | null): string {
-    // 1. Se não tiver nada, retorna o padrão
-    if (!idOrPath) return getDefaultAvatar(gang);
+	if (!idOrPath) return getDefaultAvatar(gang);
 
-    // 2. Tenta encontrar na lista de avatares pelo ID (ex: 'potato-1')
-    const avatarList = avatarsByGang[gang];
-    const foundAvatar = avatarList.find(av => av.id === idOrPath);
+	const avatarList = avatarsByGang[gang];
+	const foundAvatar = avatarList.find(av => av.id === idOrPath);
 
-    if (foundAvatar) {
-        return foundAvatar.src; // Retorna o import da imagem (caminho real)
-    }
+	if (foundAvatar) {
+		return foundAvatar.src;
+	}
 
-    // 3. Fallback: Se não achou pelo ID, pode ser que já seja o caminho (legado)
-    // Se não for nada válido, retorna o padrão da gangue.
-    return idOrPath.includes('/') ? idOrPath : getDefaultAvatar(gang);
+	return idOrPath.includes('/') ? idOrPath : getDefaultAvatar(gang);
 }

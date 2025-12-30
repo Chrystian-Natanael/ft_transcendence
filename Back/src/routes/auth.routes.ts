@@ -44,7 +44,6 @@ export async function authRoutes(app: FastifyInstance) {
 		}
 	})
 
-	// --- REGISTER ---
 	app.post('/register', {
 		schema: registerRouteSchema,
 		preHandler: app.validateBody(registerSchema)
@@ -71,7 +70,6 @@ export async function authRoutes(app: FastifyInstance) {
 		return AuthService.sanitizePlayer(user)
 	})
 
-	// --- LOGIN ---
 	app.post('/login', {
 		schema: loginRouteSchema,
 		preHandler: app.validateBody(loginSchema)
@@ -85,7 +83,6 @@ export async function authRoutes(app: FastifyInstance) {
 		const isValid = await bcrypt.compare(password, user.password!)
 		if (!isValid) return reply.code(401).send({ error: 'Credenciais inválidas' })
 
-		// Fluxo 2FA
 		if (user.twoFAEnabled) {
 			const tempToken = app.jwt.sign({
 				id: user.id, email: user.email, nick: user.nick,
@@ -108,7 +105,6 @@ export async function authRoutes(app: FastifyInstance) {
 		return reply.code(200).send({ token, user: finalUser })
 	})
 
-	// --- LOGIN 2FA ---
 	app.post('/login/2fa', {
 		onRequest: [app.authenticate2FA],
 		schema: login2FARouteSchema,
@@ -141,7 +137,6 @@ export async function authRoutes(app: FastifyInstance) {
 		return { token: finalToken, user: AuthService.sanitizePlayer(user) }
 	})
 
-	// --- ANONYMOUS ---
 	app.post('/anonymous', {
 		schema: anonymousRouteSchema,
 		preHandler: app.validateBody(anonymousSchema)
@@ -169,7 +164,6 @@ export async function authRoutes(app: FastifyInstance) {
 		return { token, user: AuthService.sanitizePlayer(user) }
 	})
 
-	// --- LOGOUT (DELETE ANONYMOUS) ---
 	app.post('/logout', {
 		onRequest: [app.authenticate],
 		schema: logoutRouteSchema
@@ -230,10 +224,6 @@ export async function authRoutes(app: FastifyInstance) {
 		await PlayerController.delete(user.id)
 		return reply.code(200).send({ message: 'Conta deletada com sucesso.' })
 	})
-
-	// =========================================================================
-	// ROTAS DE CONFIGURAÇÃO DE 2FA (SETUP, ENABLE, DISABLE)
-	// =========================================================================
 
 	app.post('/2fa/setup', {
 		onRequest: [app.authenticate],

@@ -1,30 +1,25 @@
-import { state, type Route } from "../store/appState";
 import { Button } from "../components/Button";
+import { state, type Route } from "../store/appState";
+import bgPotatoes from "/assets/bg-login-potatoes.png";
+import bgTomatoes from "/assets/bg-login-tomatoes.png";
+import bgDefault from "/assets/bg-login.png";
 
-// imgs
-import bgPotatoes from "../assets/bg-login-potatoes.png";
-import bgTomatoes from "../assets/bg-login-tomatoes.png";
-import bgDefault from "../assets/bg-login.png";
-
-// --- GERAÇÃO DO HTML ---
 export function getSoloIAHtml() {
-    const userGang = state.user?.gang || "potatoes";
-    const isPotato = userGang === "potatoes";
+	const userGang = state.user?.gang || "potatoes";
+	const isPotato = userGang === "potatoes";
+	const headerColor = isPotato ? "text-yellow-500" : "text-red-500";
+	const titleDropShadow = isPotato
+		? "drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]"
+		: "drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]";
 
-    // Estilos dinâmicos
-    const headerColor = isPotato ? "text-yellow-500" : "text-red-500";
-    const titleDropShadow = isPotato
-        ? "drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]"
-        : "drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]";
+	const backgroundByGang: Record<string, string> = {
+		potatoes: bgPotatoes,
+		tomatoes: bgTomatoes,
+	};
 
-    const backgroundByGang: Record<string, string> = {
-        potatoes: bgPotatoes,
-        tomatoes: bgTomatoes,
-    };
+	const backgroundImage = backgroundByGang[userGang] || bgDefault;
 
-    const backgroundImage = backgroundByGang[userGang] || bgDefault;
-
-    return `
+	return `
         <img src="${backgroundImage}" alt="Background"
              class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
 
@@ -40,11 +35,11 @@ export function getSoloIAHtml() {
 
                 <div>
                     ${Button({
-                        id: "btn-solo-back",
-                        text: "← VOLTAR",
-                        variant: "ghost",
-                        className: "w-auto min-w-[120px] max-w-[200px]",
-                    })}
+		id: "btn-solo-back",
+		text: "← VOLTAR",
+		variant: "ghost",
+		className: "w-auto min-w-[120px] max-w-[200px]",
+	})}
                 </div>
             </div>
 
@@ -130,21 +125,20 @@ export function getSoloIAHtml() {
     `;
 }
 
-    // --- LÓGICA ---
 export function setupSoloIAEvents(navigate: (route: Route, params?: any) => void) {
-    document
-        .getElementById('btn-solo-easy')
-        ?.addEventListener('click', () => navigate('game-solo', { difficulty: 1 }));
+	document
+		.getElementById('btn-solo-easy')
+		?.addEventListener('click', () => navigate('game-solo', { difficulty: 1 }));
 
-    document
-        .getElementById('btn-solo-medium')
-        ?.addEventListener('click', () => navigate('game-solo', { difficulty: 2 }));
+	document
+		.getElementById('btn-solo-medium')
+		?.addEventListener('click', () => navigate('game-solo', { difficulty: 2 }));
 
-    document
-        .getElementById('btn-solo-hard')
-        ?.addEventListener('click', () => navigate('game-solo', { difficulty: 3 }));
+	document
+		.getElementById('btn-solo-hard')
+		?.addEventListener('click', () => navigate('game-solo', { difficulty: 3 }));
 
-    document
-        .getElementById('btn-solo-back')
-        ?.addEventListener('click', () => navigate('dashboard'));
+	document
+		.getElementById('btn-solo-back')
+		?.addEventListener('click', () => navigate('dashboard'));
 }

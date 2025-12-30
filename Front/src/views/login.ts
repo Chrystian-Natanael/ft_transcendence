@@ -10,7 +10,7 @@ import { saveState, state, type Route } from '../store/appState';
 
 export function getLoginHtml() {
 	return `
-		<img src="src/assets/bg-login.png" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
+		<img src="/assets/bg-login.png" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30" />
 		<div class="min-h-screen flex justify-center items-center p-5">
 
 			${Card({
@@ -96,8 +96,6 @@ export function getLoginHtml() {
 }
 
 export function setupLoginEvents(navigate: (route: Route) => void) {
-
-	// 1. LOGIN DE USUÁRIO
 	const formLogin = document.getElementById('form-login') as HTMLFormElement;
 	formLogin?.addEventListener('submit', async (e) => {
 		e.preventDefault();
@@ -127,15 +125,12 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 				identifier: userInput,
 				password: passInput
 			});
-
 			console.log("AVATAR AQUI: " + response.user.avatar)
 
-			// Verifica 2FA
 			if (response.requires2FA && response.tempToken) {
 				console.log("TEMP TOKEN: " + response.tempToken);
 				localStorage.setItem('tempToken', response.tempToken);
 
-				// Preenchemos um user placeholder temporário no estado
 				state.user = {
 					id: 0,
 					name: '',
@@ -148,16 +143,13 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 					gang: 'potatoes'
 				};
 
-				// Usa a função recebida para navegar
 				navigate('login2fa');
 				return;
 			}
 
-			// Fluxo normal (Login Sucesso)
 			localStorage.setItem('token', response.token);
 			state.isAuthenticated = true;
 
-			// Atualiza o estado global
 			state.user = {
 				id: response.user.id,
 				name: response.user.name,
@@ -171,7 +163,7 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 				avatar: response.user.avatar
 			};
 
-			saveState(); // Salva no localStorage usando o helper
+			saveState();
 			navigate('dashboard');
 
 		} catch (error) {
@@ -184,7 +176,6 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 		}
 	});
 
-	// 2. LOGIN DE CONVIDADO (ANÔNIMO)
 	const formGuest = document.getElementById('form-login-guest') as HTMLFormElement;
 	formGuest?.addEventListener('submit', async (e) => {
 		e.preventDefault();
@@ -241,7 +232,6 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 		}
 	});
 
-	// 3. BOTÃO DE REGISTRO
 	document.getElementById('btn-register')?.addEventListener('click', () => {
 		navigate('register');
 	});

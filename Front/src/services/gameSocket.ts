@@ -11,7 +11,6 @@ if (!BASE_URL) {
 let socket: Socket | null = null;
 let controller: GameController | null = null;
 
-// Interface ajustada para bater com o visual
 export interface GameInvite {
     senderNick: string;
     senderAvatar: string;
@@ -99,9 +98,6 @@ export function disconnectGame() {
 }
 
 export const multiplayerService = {
-    listGameInvites: () =>
-        api.get<GameInvite[]>('/game/casual/invites'),
-
     joinRankedQueue: () =>
         api.get<QueueResponse>('/game/ranked'),
 

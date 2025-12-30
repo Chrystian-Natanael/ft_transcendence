@@ -1,20 +1,16 @@
-// src/views/dashboard.ts
 import { DashboardItem } from "@/components/DashboardItem";
-import { state, type Route } from '../store/appState';
 import { authService } from "@/services/authRoutes";
 import { showModal } from "@/utils/modalManager";
-
-//imgs
-import bgPotatoes from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
-import bgDefault from '../assets/bg-login.png';
+import { state, type Route } from '../store/appState';
+import bgPotatoes from '/assets/bg-login-potatoes.png';
+import bgTomatoes from '/assets/bg-login-tomatoes.png';
+import bgDefault from '/assets/bg-login.png';
 
 const backgroundByGang = {
 	potatoes: bgPotatoes,
 	tomatoes: bgTomatoes,
 };
 
-// --- HTML ---
 export function getDashboardHtml() {
 	const user = state.user;
 	const selectedGang = (user?.gang || 'potatoes') as 'potatoes' | 'tomatoes';
@@ -25,8 +21,8 @@ export function getDashboardHtml() {
 		selectedGang === "tomatoes"
 			? "text-red-500"
 			: selectedGang === "potatoes"
-			? "text-yellow-500"
-			: "text-cyan-500";
+				? "text-yellow-500"
+				: "text-cyan-500";
 
 	return `
 		<img id="bg-image" src="${bgSrc}" alt="Background" class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30 transition-all duration-500" />
@@ -45,62 +41,59 @@ export function getDashboardHtml() {
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
 
 				${DashboardItem({
-					id: "btn-dashboard-multiplayer",
-					title: "Multiplayer",
-					subtitle: "Jogar Online",
-					icon: "⚔️",
-					colorTheme: "purple"
-				})}
+		id: "btn-dashboard-multiplayer",
+		title: "Multiplayer",
+		subtitle: "Jogar Online",
+		icon: "⚔️",
+		colorTheme: "purple"
+	})}
 
 				${DashboardItem({
-					id: "btn-dashboard-solo",
-					title: "Modo Solo",
-					subtitle: "Treinar Habilidades - Enfrentar C.A.D.E.T.E",
-					icon: "🤖",
-					colorTheme: "indigo"
-				})}
+		id: "btn-dashboard-solo",
+		title: "Modo Solo",
+		subtitle: "Treinar Habilidades - Enfrentar C.A.D.E.T.E",
+		icon: "🤖",
+		colorTheme: "indigo"
+	})}
 
 				${DashboardItem({
-					id: "btn-dashboard-leaderboard",
-					title: "Ranking",
-					subtitle: "Ver Posições",
-					icon: "🏆",
-					colorTheme: "green"
-				})}
+		id: "btn-dashboard-leaderboard",
+		title: "Ranking",
+		subtitle: "Ver Posições",
+		icon: "🏆",
+		colorTheme: "green"
+	})}
 
 				${DashboardItem({
-					id: "btn-dashboard-friends",
-					title: "Amigos",
-					subtitle: "Gerenciar Lista",
-					icon: "👥",
-					colorTheme: "blue"
-				})}
+		id: "btn-dashboard-friends",
+		title: "Amigos",
+		subtitle: "Gerenciar Lista",
+		icon: "👥",
+		colorTheme: "blue"
+	})}
 
 				${DashboardItem({
-					id: "btn-dashboard-profile",
-					title: "Perfil",
-					subtitle: "Estatísticas",
-					icon: "📊",
-					colorTheme: "gray"
-				})}
+		id: "btn-dashboard-profile",
+		title: "Perfil",
+		subtitle: "Estatísticas",
+		icon: "📊",
+		colorTheme: "gray"
+	})}
 
 				${DashboardItem({
-					id: "btn-dashboard-config",
-					title: "Configurações",
-					subtitle: "Ajustes do Sistema",
-					icon: "⚙️",
-					colorTheme: "yellow"
-				})}
+		id: "btn-dashboard-config",
+		title: "Configurações",
+		subtitle: "Ajustes do Sistema",
+		icon: "⚙️",
+		colorTheme: "yellow"
+	})}
 
 			</div>
 		</div>
 	`;
 }
 
-// --- LÓGICA ---
 export function setupDashboardEvents(navigate: (route: Route) => void) {
-
-	// LOGOUT
 	document.getElementById('btn-dashboard-logout')?.addEventListener('click', () => {
 		showModal({
 			title: "Sair",
@@ -128,7 +121,6 @@ export function setupDashboardEvents(navigate: (route: Route) => void) {
 		});
 	});
 
-	//NAVEGAÇÃO DOS ITENS DO DASHBOARD
 	document.getElementById('btn-dashboard-multiplayer')?.addEventListener('click', () => {
 		navigate('multiplayer');
 	});

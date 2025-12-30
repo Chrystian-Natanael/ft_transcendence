@@ -8,10 +8,7 @@ import { Form } from "@/components/Form";
 import { validateForm } from "@/utils/formValidation";
 import { login2FASchema } from "@/schemas/auth.schemas";
 
-// --- HTML ---
 export function getLogin2FAHtml() {
-	// Tenta pegar a gangue do state (definido parcialmente no primeiro passo do login)
-	// Se não tiver, usa potatoes como fallback
 	const user = state.user;
 	const gang = user?.gang || 'potatoes';
 	const isPotato = gang === 'potatoes';
@@ -25,7 +22,7 @@ export function getLogin2FAHtml() {
 
 	return `
 		<img
-			src="src/assets/bg-login.png"
+			src="/assets/bg-login.png"
 			class="fixed inset-0 w-full h-full object-cover -z-10 opacity-30"
 		/>
 
@@ -89,17 +86,13 @@ export function getLogin2FAHtml() {
 	`;
 }
 
-// --- LÓGICA ---
 export function setupLogin2FAEvents(navigate: (route: Route) => void) {
-
-	// Botão Voltar/Cancelar
 	document.getElementById('btn-login-2fa-cancel')?.addEventListener('click', () => {
 		localStorage.removeItem('tempToken');
-		state.user = null; // Limpa o user temporário
+		state.user = null;
 		navigate('login');
 	});
 
-	// Botão Confirmar
 	const formLogin2fa = document.getElementById('form-2fa-login') as HTMLFormElement;
 	formLogin2fa?.addEventListener('submit', async (e) => {
 		e.preventDefault();
@@ -129,7 +122,6 @@ export function setupLogin2FAEvents(navigate: (route: Route) => void) {
 				token,
 			});
 
-			// Sucesso: Persiste token real e limpa temporário
 			localStorage.setItem('token', response.token);
 			localStorage.removeItem('tempToken');
 
@@ -147,7 +139,7 @@ export function setupLogin2FAEvents(navigate: (route: Route) => void) {
 				avatar: response.user.avatar
 			};
 
-			saveState(); // Salva no localStorage
+			saveState();
 			navigate('dashboard');
 
 		} catch (error: any) {
