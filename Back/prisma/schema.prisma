@@ -8,7 +8,52 @@ generator client {
 }
 
 model Player {
-  id       Int    @id @default(autoincrement())
-  nickname String
+  id            Int       @id @default(autoincrement())
+  name          String
+  nick          String    @unique
+  email         String    @unique
+  password      String
+  isAnonymous   Boolean   @default(false)
+  lastActivity  DateTime  @default(now())
+  gang          String
+  twoFAEnabled  Boolean   @default(false)
+  twoFASecret   String?
+  score         Int       @default(0)
+  isOnline      Boolean   @default(false)
+  avatar        String?
+
+  // Relations
+  friendsAsPlayer1    Friends[]     @relation("Player1")
+  friendsAsPlayer2    Friends[]     @relation("Player2")
+  backupCodes         BackupCode[]
+  invitesSent         Invites[]     @relation("Sender")
+  invitesReceived     Invites[]     @relation("Receiver")
 }
 
+model Friends {
+  id         Int    @id @default(autoincrement())
+  idPlayer1  Int
+  idPlayer2  Int
+
+  player1    Player @relation("Player1", fields: [idPlayer1], references: [id], onDelete: Cascade)
+  player2    Player @relation("Player2", fields: [idPlayer2], references: [id], onDelete: Cascade)
+
+  @@unique([idPlayer1, idPlayer2])
+}
+
+model BackupCode {
+  id        Int    @id @default(autoincrement())
+  idPlayer  Int
+  code      String
+
+  player    Player @relation(fields: [idPlayer], references: [id], onDelete: Cascade)
+}
+
+model Invites {
+  id       Int    @id @default(autoincrement())
+  idSender Int
+  idRec    Int
+
+  sender   Player @relation("Sender", fields: [idSender], references: [id], onDelete: Cascade)
+  receiver Player @relation("Receiver", fields: [idRec], references: [id], onDelete: Cascade)
+}

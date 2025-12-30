@@ -1,280 +1,408 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import bcrypt from 'bcrypt';
-import { authenticator } from 'otplib';
-import QRCode from 'qrcode';
+import bcrypt from 'bcrypt'
+import { FastifyInstance, FastifyRequest } from 'fastify'
+import { authenticator } from 'otplib'
+import QRCode from 'qrcode'
 
-import { db } from '../database/memoryDB';
-import { AuthService } from '../services/authServices';
-
+import { PlayerController } from '../database/controllers/player.controller'
+import { User } from '../database/memoryDB'
 import {
-    RegisterInput, registerSchema,
-    LoginInput, loginSchema,
-    Login2FAInput, login2FASchema,
-    AnonymousInput, anonymousSchema,
-    Enable2FAInput, enable2FASchema,
-    Disable2FAInput, disable2FASchema,
-    deleteAccountSchema,
-    DeleteAccountInput
-} from '../schemas/auth.schemas';
-
+	AnonymousInput, anonymousSchema,
+	DeleteAccountInput,
+	deleteAccountSchema,
+	Disable2FAInput, disable2FASchema,
+	Enable2FAInput, enable2FASchema,
+	Login2FAInput, login2FASchema,
+	LoginInput, loginSchema,
+	RegisterInput, registerSchema
+} from '../schemas/auth.schemas'
 import {
-    registerRouteSchema, loginRouteSchema, login2FARouteSchema,
-    anonymousRouteSchema, meRouteSchema, logoutRouteSchema,
-    deleteAccountRouteSchema
-} from '../schemas/swagger/route.schemas';
-
+	disable2FARouteSchema,
+	enable2FARouteSchema,
+	setup2FARouteSchema
+} from '../schemas/swagger/2fa.schemas'
 import {
-    setup2FARouteSchema, enable2FARouteSchema, disable2FARouteSchema
-} from '../schemas/swagger/2fa.schemas';
+	anonymousRouteSchema,
+	deleteAccountRouteSchema,
+	login2FARouteSchema,
+	loginRouteSchema,
+	logoutRouteSchema,
+	meRouteSchema,
+	registerRouteSchema
+} from '../schemas/swagger/route.schemas'
+import { AuthService } from '../services/authServices'
 
-const CLEANUP_INTERVAL = 1 * 60 * 1000;
+const CLEANUP_INTERVAL = 1 * 60 * 1000
 
 export async function authRoutes(app: FastifyInstance) {
-    const cleanupTimer = setInterval(AuthService.cleanupInactiveAnonymous, CLEANUP_INTERVAL);
+	const cleanupTimer = setInterval(AuthService.cleanupInactiveAnonymous, CLEANUP_INTERVAL)
 
-    app.addHook('onClose', () => {
-        clearInterval(cleanupTimer);
-    });
+	app.addHook('onClose', () => {
+		clearInterval(cleanupTimer)
+	})
 
-    app.decorate('updateLastActivity', (req: FastifyRequest) => {
-        if (req.user) {
-            AuthService.updateActivity(req.user.id);
-        }
-    });
+	app.decorate('updateLastActivity', (req: FastifyRequest) => {
+		if (req.user) {
+			AuthService.updateActivity(req.user.id)
+		}
+	})
 
-    // --- REGISTER ---
-    app.post('/register', {
-        schema: registerRouteSchema,
-        preHandler: app.validateBody(registerSchema)
-    }, async (req, reply) => {
-        const { name, nick, email, password, gang } = req.body as RegisterInput;
+	// --- REGISTER ---
+	app.post('/register', {
+		schema: registerRouteSchema,
+		preHandler: app.validateBody(registerSchema)
+	}, async (req, reply) => {
+		const { name, nick, email, password, gang } = req.body as RegisterInput
 
-        if (db.findUserByNick(nick)) return reply.code(400).send({ error: 'Nick já em uso' });
-        if (db.findUserByEmail(email)) return reply.code(400).send({ error: 'Email já cadastrado' });
+		const existingNick = await PlayerController.findByNick(nick)
+		if (existingNick) return reply.code(400).send({ error: 'Nick já em uso' })
 
-        const passwordHash = await bcrypt.hash(password!, 10);
-        
-        const user = db.addUser({
-            name, nick, email, password: passwordHash,
-            isAnonymous: false, gang,
-            friends: [], friendRequestsSent: [], friendRequestsReceived: []
-        });
+		const existingEmail = await PlayerController.findByEmail(email)
+		if (existingEmail) return reply.code(400).send({ error: 'Email já cadastrado' })
 
-        return AuthService.sanitizeUser(user);
-    });
+		const passwordHash = await bcrypt.hash(password!, 10)
 
-    // --- LOGIN ---
-    app.post('/login', {
-        schema: loginRouteSchema,
-        preHandler: app.validateBody(loginSchema)
-    }, async (req, reply) => {
-        const { identifier, password } = req.body as LoginInput;
+		const user = await PlayerController.create({
+			name,
+			nick,
+			email,
+			password: passwordHash,
+			isAnonymous: false,
+			gang,
+		})
 
-        const user = db.findByIdentifier(identifier);
-        if (!user || !user.password) return reply.code(404).send({ error: 'Credenciais inválidas' });
+		return AuthService.sanitizePlayer(user)
+	})
 
-        const isValid = await bcrypt.compare(password, user.password);
-        if (!isValid) return reply.code(401).send({ error: 'Credenciais inválidas' });
+	// --- LOGIN ---
+	app.post('/login', {
+		schema: loginRouteSchema,
+		preHandler: app.validateBody(loginSchema)
+	}, async (req, reply) => {
+		const { identifier, password } = req.body as LoginInput
 
-        // Fluxo 2FA
-        if (user.twoFactorEnabled) {
-            const tempToken = app.jwt.sign({
-                id: user.id, email: user.email, nick: user.nick,
-                isAnonymous: user.isAnonymous, gang: user.gang, temp2FA: true
-            }, { expiresIn: '5m' });
+		const player = await PlayerController.findByIdentifier(identifier)
+		if (!player || !player.password) return reply.code(404).send({ error: 'Credenciais inválidas' })
+		const user = {
+			id: player.id!,
+			name: player.name!,
+			nick: player.nick!,
+			email: player.email!,
+			isAnonymous: player.isAnonymous!,
+			gang: player.gang!,
+			password: player.password!,
+			twoFactorEnabled: player.twoFAEnabled,
+			twoFactorSecret: player.twoFASecret
+		} as User
 
-            return reply.code(200).send({
-                requires2FA: true,
-                tempToken,
-                message: 'Por favor, insira o código 2FA'
-            });
-        }
+		const isValid = await bcrypt.compare(password, user.password!)
+		if (!isValid) return reply.code(401).send({ error: 'Credenciais inválidas' })
 
-        const token = app.jwt.sign({
-            id: user.id, email: user.email, nick: user.nick,
-            isAnonymous: user.isAnonymous, gang: user.gang
-        });
+		// Fluxo 2FA
+		if (user.twoFactorEnabled) {
+			const tempToken = app.jwt.sign({
+				id: user.id, email: user.email, nick: user.nick,
+				isAnonymous: user.isAnonymous, gang: user.gang, temp2FA: true
+			}, { expiresIn: '5m' })
 
-        return reply.code(200).send({ token, user: AuthService.sanitizeUser(user) });
-    });
+			return reply.code(200).send({
+				requires2FA: true,
+				tempToken,
+				message: 'Por favor, insira o código 2FA'
+			})
+		}
 
-    // --- LOGIN 2FA ---
-    app.post('/login/2fa', {
-        onRequest: [app.authenticate2FA],
-        schema: login2FARouteSchema,
-        preHandler: app.validateBody(login2FASchema)
-    }, async (req: FastifyRequest, reply) => {
-        const { token } = req.body as Login2FAInput;
+		const token = app.jwt.sign({
+			id: user.id, email: user.email, nick: user.nick,
+			isAnonymous: user.isAnonymous, gang: user.gang
+		})
 
-        const user = await db.findUserById(req.user.id);
+		return reply.code(200).send({ token, user: AuthService.sanitizeUser(user) })
+	})
 
-        if (!user) return reply.code(401).send({ error: 'Usuário não encontrado' });
-        if (!user.twoFactorEnabled || !user.twoFactorSecret) return reply.code(400).send({ error: '2FA não habilitado' });
+	// --- LOGIN 2FA ---
+	app.post('/login/2fa', {
+		onRequest: [app.authenticate2FA],
+		schema: login2FARouteSchema,
+		preHandler: app.validateBody(login2FASchema)
+	}, async (req: FastifyRequest, reply) => {
+		const { token } = req.body as Login2FAInput
 
-        let isValid = authenticator.check(token, user.twoFactorSecret);
-        
-        if (!isValid && user.backupCodes?.includes(token)) {
-            user.backupCodes = user.backupCodes.filter(code => code !== token);
-            isValid = true;
-        }
+		const player = await PlayerController.findById(req.user.id)
+		if (!player) return reply.code(401).send({ error: 'Usuário não encontrado' })
+		const user = {
+			id: player.id!,
+			name: player.name!,
+			nick: player.nick!,
+			email: player.email!,
+			isAnonymous: player.isAnonymous!,
+			gang: player.gang!,
+			twoFactorEnabled: player.twoFAEnabled,
+			twoFactorSecret: player.twoFASecret
+		} as User
 
-        if (!isValid) return reply.code(400).send({ error: 'Token inválido' });
+		if (!user.twoFactorEnabled || !user.twoFactorSecret) return reply.code(400).send({ error: '2FA não habilitado' })
 
-        const finalToken = app.jwt.sign({
-            id: user.id, email: user.email, nick: user.nick,
-            isAnonymous: user.isAnonymous, gang: user.gang
-        });
+		let isValid = authenticator.check(token, user.twoFactorSecret)
 
-        return { token: finalToken, user: AuthService.sanitizeUser(user) };
-    });
+		if (!isValid) {
+			const backupCode = await PlayerController.getBackupCodes(user.id)
+			if (backupCode && backupCode.includes(token)) {
+				await PlayerController.removeBackupCode(user.id, token)
+				isValid = true
+			}
+		}
 
-    // --- ANONYMOUS ---
-    app.post('/anonymous', {
-        schema: anonymousRouteSchema,
-        preHandler: app.validateBody(anonymousSchema)
-    }, async (req, reply) => {
-        const { nick } = req.body as AnonymousInput;
-        const generatedNick = `anonymous_${nick}`;
+		if (!isValid) return reply.code(400).send({ error: 'Token inválido' })
 
-        if (db.findUserByNick(generatedNick)) return reply.code(400).send({ error: 'Nick já em uso' });
+		const finalToken = app.jwt.sign({
+			id: user.id, email: user.email, nick: user.nick,
+			isAnonymous: user.isAnonymous, gang: user.gang
+		})
 
-        const user = db.addUser({
-            name: generatedNick, nick: generatedNick,
-            email: `anonymous_${Date.now()}@local`,
-            isAnonymous: true,
-            gang: Math.random() > 0.5 ? 'potatoes' : 'tomatoes',
-            friends: [], friendRequestsSent: [], friendRequestsReceived: []
-        });
+		return { token: finalToken, user: AuthService.sanitizeUser(user) }
+	})
 
-        const token = app.jwt.sign({
-            id: user.id, email: user.email, nick: user.nick,
-            isAnonymous: true, gang: user.gang,
-        }, { expiresIn: '2h' });
+	// --- ANONYMOUS ---
+	app.post('/anonymous', {
+		schema: anonymousRouteSchema,
+		preHandler: app.validateBody(anonymousSchema)
+	}, async (req, reply) => {
+		const { nick } = req.body as AnonymousInput
+		const generatedNick = `anonymous_${nick}`
 
-        return { token, user: AuthService.sanitizeUser(user) };
-    });
+		const existing = await PlayerController.findByNick(generatedNick)
+		if (existing) return reply.code(400).send({ error: 'Nick já em uso' })
 
-    // --- LOGOUT (DELETE ANONYMOUS) ---
-    app.post('/logout', {
-        onRequest: [app.authenticate],
-        schema: logoutRouteSchema
-    }, async (req: FastifyRequest, reply) => {
-        const user = await db.findUserById(req.user.id);
-        
-        if (user && user.isAnonymous) {
-            db.deleteUser(user.id);
-        }
+		const player = await PlayerController.create({
+			name: generatedNick,
+			nick: generatedNick,
+			email: `anonymous_${Date.now()}@local`,
+			password: '',
+			isAnonymous: true,
+			gang: Math.random() > 0.5 ? 'potatoes' : 'tomatoes',
+		})
 
-        return reply.code(200).send({ message: 'Logout realizado' });
-    });
+		const user = {
+			id: player.id,
+			name: player.name,
+			nick: player.nick,
+			email: player.email,
+			isAnonymous: player.isAnonymous,
+			gang: player.gang,
+			password: player.password,
+		} as User
 
-    app.delete('/delete', {
-        onRequest: [app.authenticate],
-        schema: deleteAccountRouteSchema,
-        preHandler: app.validateBody(deleteAccountSchema)
-    }, async (req: FastifyRequest, reply) => {
-        const { password, token } = req.body as DeleteAccountInput;
-        
-        const user = await db.findUserById(req.user.id);
+		const token = app.jwt.sign({
+			id: user.id, email: user.email, nick: user.nick,
+			isAnonymous: true, gang: user.gang,
+		}, { expiresIn: '2h' })
 
-        if (!user) {
-            return reply.code(400).send({ error: 'Usuário não encontrado' });
-        }
+		return { token, user: AuthService.sanitizeUser(user) }
+	})
 
-        if (!user.isAnonymous) {
-            if (!password) {
-                return reply.code(400).send({ error: 'A senha é obrigatória para confirmar a exclusão.' });
-            }
+	// --- ME ---
+	app.get('/me', {
+		onRequest: [app.authenticate],
+		onResponse: [app.updateLastActivity],
+		schema: meRouteSchema
+	}, async (req: FastifyRequest, reply) => {
+		const player = await PlayerController.findById(req.user.id)
+		if (!player) return reply.code(404).send({ error: 'Usuário não encontrado' })
+		const user = {
+			id: player?.id!,
+			name: player?.name!,
+			nick: player?.nick!,
+			email: player?.email!,
+			isAnonymous: player?.isAnonymous!,
+			gang: player?.gang!,
+			password: player?.password!,
+			twoFactorEnabled: player?.twoFAEnabled,
+			twoFactorSecret: player?.twoFASecret
+		} as User
+		return { user: AuthService.sanitizeUser(user) }
+	})
 
-            const isPassValid = await bcrypt.compare(password, user.password!);
-            if (!isPassValid) {
-                return reply.code(400).send({ error: 'Senha incorreta.' });
-            }
+	// --- LOGOUT (DELETE ANONYMOUS) ---
+	app.post('/logout', {
+		onRequest: [app.authenticate],
+		schema: logoutRouteSchema
+	}, async (req: FastifyRequest, reply) => {
+		const user = await PlayerController.findById(req.user.id)
 
-            if (user.twoFactorEnabled) {
-                if (!token) {
-                    return reply.code(400).send({ error: 'Token 2FA é obrigatório.' });
-                }
-                
-                const isValidToken = authenticator.check(token, user.twoFactorSecret!);
-                const isBackupCode = !isValidToken && user.backupCodes?.includes(token);
+		if (user && user.isAnonymous) {
+			await PlayerController.delete(user.id)
+		}
 
-                if (!isValidToken && !isBackupCode) {
-                    return reply.code(400).send({ error: 'Token 2FA inválido.' });
-                }
-            }
-        }
+		return reply.code(200).send({ message: 'Logout realizado' })
+	})
 
-        db.deleteUser(user.id);
+	app.delete('/delete', {
+		onRequest: [app.authenticate],
+		schema: deleteAccountRouteSchema,
+		preHandler: app.validateBody(deleteAccountSchema)
+	}, async (req: FastifyRequest, reply) => {
+		const { password, token } = req.body as DeleteAccountInput
 
-        return reply.code(200).send({ message: 'Conta deletada com sucesso.' });
-    });
+		const player = await PlayerController.findById(req.user.id)
 
-    // =========================================================================
-    // ROTAS DE CONFIGURAÇÃO DE 2FA (SETUP, ENABLE, DISABLE)
-    // =========================================================================
+		if (!player) {
+			return reply.code(400).send({ error: 'Usuário não encontrado' })
+		}
 
-    app.post('/2fa/setup', {
-        onRequest: [app.authenticate],
-        schema: setup2FARouteSchema
-    }, async (req: FastifyRequest, reply) => {
-        const user = await db.findUserById(req.user.id);
-        if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' });
-        if (user.twoFactorEnabled) return reply.code(400).send({ error: '2FA já habilitado' });
+		const user = {
+			id: player?.id!,
+			name: player?.name!,
+			nick: player?.nick!,
+			email: player?.email!,
+			isAnonymous: player?.isAnonymous!,
+			gang: player?.gang!,
+			password: player?.password!,
+			twoFactorEnabled: player?.twoFAEnabled,
+			twoFactorSecret: player?.twoFASecret
+		} as User
 
-        const secret = authenticator.generateSecret();
-        const otpauth = authenticator.keyuri(user.email, 'ft_transcendence', secret);
-        const qrcode = await QRCode.toDataURL(otpauth);
+		if (!user.isAnonymous) {
+			if (!password) {
+				return reply.code(400).send({ error: 'A senha é obrigatória para confirmar a exclusão.' })
+			}
 
-        user.twoFactorSecret = secret;
+			const isPassValid = await bcrypt.compare(password, user.password!)
+			if (!isPassValid) {
+				return reply.code(400).send({ error: 'Senha incorreta.' })
+			}
 
-        return { secret, qrcode };
-    });
+			if (user.twoFactorEnabled) {
+				if (!token) {
+					return reply.code(400).send({ error: 'Token 2FA é obrigatório.' })
+				}
 
-    app.post('/2fa/enable', {
-        onRequest: [app.authenticate],
-        schema: enable2FARouteSchema,
-        preHandler: app.validateBody(enable2FASchema)
-    }, async (req: FastifyRequest, reply) => {
-        const { token, secret } = req.body as Enable2FAInput;
-        const user = await db.findUserById(req.user.id);
+				let isValid = authenticator.check(token, user.twoFactorSecret!)
 
-        if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' });
-        if (user.twoFactorEnabled) return reply.code(400).send({ error: '2FA já habilitado' });
-        if (user.twoFactorSecret !== secret) return reply.code(400).send({ error: 'Segredo inválido' });
+				if (!isValid) {
+					const backupCode = await PlayerController.getBackupCodes(user.id)
+					if (backupCode && backupCode.includes(token)) {
+						await PlayerController.removeBackupCode(user.id, token)
+						isValid = true
+					}
+				}
 
-        const isValid = authenticator.check(token, secret);
-        if (!isValid) return reply.code(400).send({ error: 'Token inválido' });
+				if (!isValid) {
+					return reply.code(400).send({ error: 'Token 2FA inválido.' })
+				}
+			}
+		}
 
-        user.twoFactorEnabled = true;
-        user.backupCodes = AuthService.generateBackupCodes();
+		await PlayerController.delete(user.id)
+		return reply.code(200).send({ message: 'Conta deletada com sucesso.' })
+	})
 
-        return { message: '2FA habilitado com sucesso', backupCodes: user.backupCodes };
-    });
+	// =========================================================================
+	// ROTAS DE CONFIGURAÇÃO DE 2FA (SETUP, ENABLE, DISABLE)
+	// =========================================================================
 
-    app.post('/2fa/disable', {
-        onRequest: app.authenticate,
-        schema: disable2FARouteSchema,
-        preHandler: app.validateBody(disable2FASchema)
-    }, async (req: FastifyRequest, reply) => {
-        const { token } = req.body as Disable2FAInput;
-        const user = await db.findUserById(req.user.id);
+	app.post('/2fa/setup', {
+		onRequest: [app.authenticate],
+		schema: setup2FARouteSchema
+	}, async (req: FastifyRequest, reply) => {
+		const player = await PlayerController.findById(req.user.id)
+		const user = {
+			id: player?.id!,
+			name: player?.name!,
+			nick: player?.nick!,
+			email: player?.email!,
+			isAnonymous: player?.isAnonymous!,
+			gang: player?.gang!,
+			password: player?.password!,
+			twoFactorEnabled: player?.twoFAEnabled,
+			twoFactorSecret: player?.twoFASecret
+		} as User
 
-        if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' });
-        if (!user.twoFactorEnabled || !user.twoFactorSecret) return reply.code(400).send({ error: '2FA não está habilitado' });
+		if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' })
+		if (user.twoFactorEnabled) return reply.code(400).send({ error: '2FA já habilitado' })
 
-        let isValid = authenticator.check(token, user.twoFactorSecret);
-        if (!isValid && user.backupCodes?.includes(token)) {
-             user.backupCodes = user.backupCodes.filter(c => c !== token);
-             isValid = true;
-        }
+		const secret = authenticator.generateSecret()
+		const otpauth = authenticator.keyuri(user.email, 'ft_transcendence', secret)
+		const qrcode = await QRCode.toDataURL(otpauth)
 
-        if (!isValid) return reply.code(400).send({ error: 'Token inválido' });
+		await PlayerController.update(user.id, { twoFASecret: secret })
 
-        user.twoFactorEnabled = false;
-        user.twoFactorSecret = undefined;
-        user.backupCodes = undefined;
+		return { secret, qrcode }
+	})
 
-        return { message: '2FA desabilitado com sucesso' };
-    });
+	app.post('/2fa/enable', {
+		onRequest: [app.authenticate],
+		schema: enable2FARouteSchema,
+		preHandler: app.validateBody(enable2FASchema)
+	}, async (req: FastifyRequest, reply) => {
+		const { token, secret } = req.body as Enable2FAInput
+		const player = await PlayerController.findById(req.user.id)
+		const user = {
+			id: player?.id!,
+			name: player?.name!,
+			nick: player?.nick!,
+			email: player?.email!,
+			isAnonymous: player?.isAnonymous!,
+			gang: player?.gang!,
+			password: player?.password!,
+			twoFactorEnabled: player?.twoFAEnabled,
+			twoFactorSecret: player?.twoFASecret
+		} as User
+
+		if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' })
+		if (user.twoFactorEnabled) return reply.code(400).send({ error: '2FA já habilitado' })
+		if (user.twoFactorSecret !== secret) return reply.code(400).send({ error: 'Segredo inválido' })
+
+		const isValid = authenticator.check(token, secret)
+		if (!isValid) return reply.code(400).send({ error: 'Token inválido' })
+
+		const backupCodes = AuthService.generateBackupCodes()
+		await PlayerController.update(user.id, { twoFAEnabled: true })
+		await PlayerController.addBackupCodes(user.id, backupCodes)
+
+		return { message: '2FA habilitado com sucesso', backupCodes }
+	})
+
+	app.post('/2fa/disable', {
+		onRequest: app.authenticate,
+		schema: disable2FARouteSchema,
+		preHandler: app.validateBody(disable2FASchema)
+	}, async (req: FastifyRequest, reply) => {
+		const { token } = req.body as Disable2FAInput
+		const player = await PlayerController.findById(req.user.id)
+		if (!player) return reply.code(404).send({ error: 'Usuário não encontrado' })
+
+		const user = {
+			id: player.id!,
+			name: player.name!,
+			nick: player.nick!,
+			email: player.email!,
+			isAnonymous: player.isAnonymous!,
+			gang: player.gang!,
+			password: player.password!,
+			twoFactorEnabled: player.twoFAEnabled,
+			twoFactorSecret: player.twoFASecret
+		} as User
+
+		if (!user.twoFactorEnabled || !user.twoFactorSecret) return reply.code(400).send({ error: '2FA não está habilitado' })
+
+		let isValid = authenticator.check(token, user.twoFactorSecret)
+		const backupCode = await PlayerController.getBackupCodes(user.id)
+
+		if (!isValid) {
+			if (backupCode && backupCode.includes(token)) {
+				await PlayerController.removeBackupCode(user.id, token)
+				isValid = true
+			}
+		}
+
+		if (!isValid) return reply.code(400).send({ error: 'Token inválido' })
+
+		await PlayerController.update(user.id, { twoFAEnabled: false, twoFASecret: null })
+
+		for (const code of backupCode) {
+			await PlayerController.removeBackupCode(user.id, code)
+		}
+
+		return { message: '2FA desabilitado com sucesso' }
+	})
 }
