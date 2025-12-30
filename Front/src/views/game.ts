@@ -26,8 +26,8 @@ import imgTomatoUp from '../assets/moves/Tomato_Up.png';
 import { getDefaultAvatar } from "@/components/AvatarOptions";
 import { navigateTo } from "@/main";
 import { state } from "@/store/appState";
-import { default as bgMixed, default as bgPotatoes } from '../assets/bg-login-potatoes.png';
-import bgTomatoes from '../assets/bg-login-tomatoes.png';
+import { default as bgMixed, default as bgPotatoes } from '../assets/gameBackground.png';
+import bgTomatoes from '../assets/gameBackground.png';
 
 // --- 1. A ESTRUTURA HTML (Visual) ---
 export function getGameHtml() {

@@ -12,7 +12,7 @@
 	"files.autoSave": "afterDelay",
 	"files.autoSaveDelay": 1000,
 	"[typescript]": {
-		"editor.defaultFormatter": "dbaeumer.vscode-eslint",
+		"editor.defaultFormatter": "vscode.typescript-language-features",
 		"editor.formatOnSave": true
 	},
 	"cmake.sourceDirectory": "${workspaceFolder}/usr/share/cmake-3.22/Modules/FortranCInterface/Verify"
