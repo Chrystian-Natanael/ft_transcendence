@@ -165,7 +165,8 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 					isOnline: true,
 					score: 0,
 					rank: 0,
-					has2FA: response.user.has2FA
+					has2FA: response.user.has2FA,
+					avatar: response.user.avatar
 				};
 
 				saveState(); // Salva no localStorage usando o helper
@@ -221,7 +222,8 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 				isOnline: true,
 				score: 0,
 				rank: 0,
-				has2FA: response.user.has2FA
+				has2FA: response.user.has2FA,
+				avatar: response.user.avatar
 			};
 
 			saveState();

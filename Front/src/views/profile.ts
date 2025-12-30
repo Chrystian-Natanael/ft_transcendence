@@ -38,6 +38,8 @@ export function getProfileHtml() {
 	const bgSrc = backgrounds[selectedGang] || bgDefault;
 	const avatarSrc = user?.avatar || getDefaultAvatar(selectedGang);
 
+	console.log("Rendering profile for gang:", selectedGang);
+
 	// Estilos dinâmicos
 	const headerColor = selectedGang === "tomatoes" ? "text-red-500" : selectedGang === "potatoes" ? "text-yellow-500" : "text-cyan-500";
 	const avatarBorder = selectedGang === "potatoes" ? "border-yellow-500" : selectedGang === "tomatoes" ? "border-red-500" : "border-cyan-500";
@@ -211,13 +213,12 @@ export function setupProfileEvents(navigate: (route: Route) => void) {
 					img.src = avatarSrc;
 				}
 
-				
 				// Salvar no state local (para persistir visualmente)
 				if (state.user) {
 					state.user.avatar = avatarSrc;
 					saveState();
 				}
-				
+
 				try {
 					console.log("Avatar selecionado:", avatarId, avatarSrc);
 					await profileService.updateAvatar({ avatarId });

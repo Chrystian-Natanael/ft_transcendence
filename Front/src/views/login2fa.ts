@@ -143,7 +143,8 @@ export function setupLogin2FAEvents(navigate: (route: Route) => void) {
 				isOnline: true,
 				score: 0,
 				rank: 0,
-				has2FA: true
+				has2FA: true,
+				avatar: response.user.avatar
 			};
 
 			saveState(); // Salva no localStorage

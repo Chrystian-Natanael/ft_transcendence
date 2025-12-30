@@ -14,7 +14,8 @@ export class AuthService {
 			email: user.isAnonymous ? undefined : user.email,
 			isAnonymous: user.isAnonymous,
 			gang: user.gang,
-			has2FA: !!user.twoFactorEnabled
+			has2FA: !!user.twoFactorEnabled,
+			avatar: user.avatar
 		}
 	}
 

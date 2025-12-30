@@ -91,7 +91,8 @@ export async function authRoutes(app: FastifyInstance) {
 			gang: player.gang!,
 			password: player.password!,
 			twoFactorEnabled: player.twoFAEnabled,
-			twoFactorSecret: player.twoFASecret
+			twoFactorSecret: player.twoFASecret,
+			avatar: player.avatar,
 		} as User
 
 		const isValid = await bcrypt.compare(password, user.password!)

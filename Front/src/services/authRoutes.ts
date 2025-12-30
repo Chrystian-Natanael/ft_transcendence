@@ -38,6 +38,7 @@ interface UserResponse {
     isAnonymous: boolean;
     gang: 'potatoes' | 'tomatoes';
     has2FA: boolean;
+	avatar?: string;
 }
 
 interface LoginResponse {
@@ -93,10 +94,10 @@ export const authService = {
 
     login2FA: (data: Login2FAPayload): Promise<LoginResponse> => {
         const tempToken = localStorage.getItem('tempToken');
-        
+
         return api.post<LoginResponse>("/auth/login/2fa", data, {
             headers: {
-                Authorization: `Bearer ${tempToken}` 
+                Authorization: `Bearer ${tempToken}`
             }
         });
     },
