@@ -29,6 +29,7 @@ import { state } from "@/store/appState";
 import { default as bgMixed, default as bgPotatoes } from '../assets/gameBackground.png';
 import bgTomatoes from '../assets/gameBackground.png';
 
+
 // --- 1. A ESTRUTURA HTML (Visual) ---
 export function getGameHtml() {
     const user = state.user;
