@@ -1,9 +1,6 @@
 Tela de perfil
 	Arrumar estatísticas		THAIS DANI
 
-JOGO:
-	arrumar a personalização do jogo 	LEO
-
 Front end
 	Ao entrar na página e já tiver um token salvo 	DANI
 		verificar se aquele token ainda está válido
@@ -17,11 +14,6 @@ Back end
 
 Fazer componentes
 	componente texto para cores baseado em gangues	DANI
-
-Outras coisas
-	Docker	CHRYS
-	readme	CHRYS
-
 
 BANCO DE DADOS:
 

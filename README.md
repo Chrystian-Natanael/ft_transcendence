@@ -16,33 +16,56 @@ Key features include:
 ## Instructions
 
 ### Prerequisites
-- **Node.js** (v18+ recommended)
-- **npm** or **yarn**
-- **Git** for cloning the repository
-- **Python3** (optional, for test user script)
+- **Linux** environment (required for Makefile compatibility)
+- **Docker** and **Docker Compose**
+- **Make** utility
+- **Git**
 
-### Backend Setup
-cd backend
-npm install
-cp .env.example .env # Configure JWT_SECRET=your-secret-here
-npm run dev # Runs on http://localhost:3333
+### Setup & Run
+This project is fully containerized for easy deployment. Use the provided `Makefile` to manage the application lifecycle.
 
-### Frontend Setup
-cd frontend
-npm install
-npm run dev # Runs on http://localhost:5173 (Vite)
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/DanielSurf10/ft_transcendence.git](https://github.com/DanielSurf10/ft_transcendence.git)
+    cd ft_transcendence
+    ```
 
-### Quick Start (Development)
-git clone https://github.com/DanielSurf10/ft_transcendence.git
-cd ft_transcendence
+2.  **Start the application:**
+    This command builds the Docker images for both frontend and backend, sets up the internal network, and starts the containers in detached mode.
+    ```bash
+    make all
+    ```
+    - The frontend will be available at `http://localhost:5173`
+    - The backend API will be available at `http://localhost:3333`
 
-Terminal 1 - Backend
-cd backend && npm install && npm run dev
+3.  **View logs (optional):**
+    To monitor the application logs in real-time:
+    ```bash
+    make logs
+    ```
+    Press `Ctrl+C` to exit the log view (this does not stop the application).
 
-Terminal 2 - Frontend
-cd ../frontend && npm install && npm run dev
+4.  **Stop the application:**
+    To stop and remove the containers:
+    ```bash
+    make clean
+    ```
 
-Open `http://localhost:5173`
+5.  **Full Reset:**
+    To stop containers, remove volumes (database data), and delete built images for a clean slate:
+    ```bash
+    make fclean
+    ```
+
+6.  **Rebuild and Restart:**
+    To perform a full reset and immediately restart the application:
+    ```bash
+    make re
+    ```
+
+### Development Notes
+- The `docker-compose.yml` mounts the local directories to the containers, enabling hot-reloading. Changes to the source code will be reflected immediately without rebuilding.
+- **Database Persistence**: Data is persisted in a Docker volume mapping to `./Backend/data`. Using `make fclean` will delete this data.
 
 ## Resources
 
@@ -59,26 +82,26 @@ AI assisted with README structure, Zod schema patterns, and Pong physics debuggi
 ## Team Information
 
 **cnatanae** 
-- **Roles**: Full-stack Developer, Tech Lead
-- **Responsibilities**: Backend APIs, real-time game engine, Socket.IO integration
+- **Roles**: Developer & DevOps
+- **Responsibilities**: Backend APIs & Game Engine 
 
 **danbarbo**
-- **Roles**: Frontend Developer
-- **Responsibilities**: UI/UX, Vite + Tailwind implementation, game frontend
+- **Roles**: Developer & TechLead
+- **Responsibilities**: Backend APIs & Project Integrations
 
 **leobarbo** 
-- **Roles**: Authentication Specialist
-- **Responsibilities**: 2FA system, JWT auth, user management
+- **Roles**: Developer & Project Manager (PM)
+- **Responsibilities**: 2FA system, FrontEnd Views
 
 **tmalheir**
-- **Roles**: Database & Features
-- **Responsibilities**: MemoryDB, friends system, leaderboards
+- **Roles**: Developer & Project Owner (PO)
+- **Responsibilities**: MemoryDB, FrontEnd Views
 
 ## Project Management
 
 - **Organization**: 4-member team with clear task distribution across backend, frontend, auth, and features. Daily coordination through structured workflows.
-- **Tools**: Slack, Discord, VS Code with TypeScript extensions
-- **Communication**: Discord channels for day-to-day coordination, group voice calls for planning, live coding sessions for complex features and debugging
+- **Tools**: Trello, VS Code with TypeScript extensions and github
+- **Communication**: Discord channels for day-to-day coordination, group voice calls for planning, live coding sessions for complex features and debugging, WhatsApp
 
 ## Technical Stack
 
@@ -145,42 +168,83 @@ lastActivity: Date (auto-updated)
 
 | Feature | Developer | Description |
 |---------|-----------|-------------|
-| **Authentication** | DanielSurf10 | Register/login (email+password), anonymous mode |
-| **2FA System** | DanielSurf10 | TOTP QR setup, enable/disable, backup codes |
-| **Real-time Multiplayer** | DanielSurf10 | Socket.IO Pong (collision physics, 60fps) |
-| **Friends System** | DanielSurf10 | Send/accept requests, match invitations |
-| **Ranked Matches** | DanielSurf10 | +20 win/-10 loss points, global leaderboard |
-| **Power-ups** | DanielSurf10 | Big paddle, shield, speed boost (5s duration) |
-| **Solo AI** | DanielSurf10 | 3 difficulties vs C.A.D.E.T.E bot |
-| **Profile & Stats** | DanielSurf10 | Avatar, gang theming, match history, stats |
+| **Authentication** | danbarbo | Register/login (email+password), anonymous mode |
+| **2FA System** | leobarbo | TOTP QR setup, enable/disable, backup codes |
+| **game engine** | cnatanae | Socket.IO Pong (collision physics, 60fps) |
+| **Friends System** | danbarbo | Send/accept requests, match invitations |
+| **game matches** | cnatanae | +20 win/-10 loss points, global leaderboard |
+| **Power-ups** | leobarbo | Big paddle, shield, speed boost (5s duration) |
+| **Solo AI** | tmalheir | 3 difficulties vs C.A.D.E.T.E bot |
+| **Profile & Stats** | leobarbo | Avatar, match history, stats |
+| **views theme** | tmalheir |  gang theming |
 
 ## Modules
 
-**Major Modules (2pts each = 8pts total)**:
-- **Real-time multiplayer Pong** (4pts): Socket.IO @60fps, physics, power-ups
-- **Advanced Authentication w/ 2FA** (4pts): TOTP + QR + backup codes + temp tokens
+### Web & Infrastructure
+- **Major**: Implement real-time features using WebSockets (Socket.IO for game loop @60fps & live notifications).
+- **Major**: Standard user management and authentication (JWT-based auth, anonymous login, session management).
+- **Minor**: Use a backend framework (Fastify with TypeScript).
+- **Minor**: Use an ORM for the database (Prisma ORM structure).
+- **Minor**: Custom-made design system with reusable components (10+ components: Button, Input, Modal, Card, Toast, Avatar, Navbar, etc., using TailwindCSS).
+- **Minor**: Support for additional browsers (Compatible with Chrome, Firefox, and Safari).
 
-**Minor Modules (1pt each = 5pts total)**:
-- **Friend system** (1pt): Requests, invites, block functionality
-- **Ranked leaderboard** (1pt): Global ranking with ELO-like scoring
-- **Power-ups system** (1pt): 3 types (big paddle, shield, speed)
-- **Solo AI opponent** (1pt): 3 difficulty levels
-- **Gang theming** (1pt): Potatoes/Tomatoes UI customization
+### Gameplay & Features
+- **Major**: Implement a complete web-based game where users can play against each other (Classic Pong physics).
+- **Major**: Remote players — Enable two players on separate computers to play the same game in real-time.
+- **Major**: Introduce an AI Opponent for games (C.A.D.E.T.E bot with 3 difficulty levels).
+- **Minor**: Game customization options (Power-ups: Big Paddle, Shield, Speed Boost).
+- **Minor**: A gamification system to reward users for their actions (Ranked ELO system, Leaderboards, Match History).
 
-**Total Score: 13 points**
+### Security
+- **Minor**: Implement a complete 2FA (Two-Factor Authentication) system for the users (TOTP via Google Authenticator).
+
+### Custom Modules
+
+#### **Major: Single Page Application (SPA) Architecture**
+**Justification:**
+- **Why you chose this module:** We chose to build the frontend as a Single Page Application to provide a fluid, native-app-like experience. In a real-time game, page reloads are detrimental to the user experience as they sever WebSocket connections.
+- **What technical challenges it addresses:**
+    - **State Management:** implementing a global store (`appState`) to manage user sessions, notifications, and game states across different views without losing data.
+    - **WebSocket Lifecycle:** maintaining a persistent Socket.IO connection while the user navigates through menus, lobbies, and game views, preventing unnecessary reconnection handshakes.
+    - **Client-Side Routing:** handling navigation and history API manually to render components dynamically without triggering server-side requests for HTML.
+- **How it adds value:** It drastically reduces server load by only fetching data (JSON) rather than markup, ensures the background music and game invitations persist during navigation, and provides instant UI transitions.
+- **Why it deserves Major module status:** Implementing a robust SPA requires architecting a complex frontend system from the ground up (routing, state, component lifecycle) rather than just serving static pages. It fundamentally changes how the frontend interacts with the backend APIs.
+
+#### **Minor: Dynamic Gang Theming (Potatoes vs Tomatoes)**
+**Justification:**
+- **Why you chose this module:** To move away from generic "Dark/Light" modes and give the project a unique identity ("Gang War") that permeates every aspect of the UI.
+- **What technical challenges it addresses:**
+    - **Dynamic Asset Swapping:** Changing not just CSS colors, but also image assets (avatars, backgrounds, game skins) on the fly based on the user's selected gang.
+    - **Context Propagation:** ensuring the theme choice is persisted in the database, loaded upon login, and immediately reflected across all reusable components.
+- **How it adds value:** It enhances user immersion and gamifies the UI itself. The visual feedback of "belonging" to a gang (Red/Tomatoes vs Yellow/Potatoes) encourages user interaction and personalization.
 
 **Implementation Details**: Full REST API + WebSocket integration. Custom MemoryDB with session persistence and automatic cleanup.
 
 ## Individual Contributions
 
-**DanielSurf10**:
-- **Core Implementation**: 100% code authorship (backend/frontend)
+**danbarbo**:
+- **Core Implementation**: backend routes
 - **Technical Challenges Overcome**:
-  - **Socket.IO race conditions**: Room-based matchmaking + proper cleanup
-  - **Pong collision physics**: Angle-based rebounds + edge case handling
-  - **2FA state management**: tempToken → fullToken flow + backup codes
-  - **MemoryDB persistence**: In-memory SQLite with activity timeouts
-- **Owned Features**: All listed modules/features
+
+- **Owned Features**: Authentication & Friends System
+
+**leobarbo**:
+- **Core Implementation**: frontend views
+- **Technical Challenges Overcome**:
+
+- **Owned Features**: Profile Assets, PowerUps & 2FA 
+
+**cnatanae**:
+- **Core Implementation**: gameEngine
+- **Technical Challenges Overcome**: 
+
+- **Owned Features**: GameMatches & engine
+
+**tmalheir**:
+- **Core Implementation**: FrontEnd Views
+- **Technical Challenges Overcome**:
+
+- **Owned Features**: views theme & SoloAI
 
 View API docs
 http://localhost:3333/docs
@@ -190,11 +254,35 @@ Login → Friends → Invite → Accept → Play → +20/-10 points
 
 ### API Endpoints
 POST /auth/register # Create account
-POST /auth/login # JWT + 2FA flow
+POST /auth/login # JWT flow
+POST /auth/login/2FA # 2FA flow
 POST /auth/anonymous # Guest mode
+POST /auth/logout # logout aplication
+DELETE /auth/delete # delele anonymous
 POST /auth/2fa/setup # QR code generation
+POST /auth/2fa/enable # enable 2FA
+POST /auth/2fa/disable # disable 2FA
+
 GET /leaderboards # Global ranking
-POST /friends/invite # Match invitation
+
+GET /friends/list #  list friends
+GET /friends/users/:id # find a specific user
+POST /friends/request # Invite user to friend list
+POST /friends/response # accept or decline a friend invitation
+DELETE /friends/remove/:id # remove user from friends list
+GET /friends/requests/received # list a pendent invites received 
+
+GET /users/me # get user informations
+PATCH /users/me # update nick
+PATCH /users/me/avatar # update avatar
+
+GET /game/ranked # Find opponent in ranked mode
+POST /game/casual/invite # invite a friend for a game pong
+POST /game/casual/response # accept or decline a invite for a game pong
+POST /game/queue/leave # leave queue game
+
+
+
 
 ### Known Limitations
 - MemoryDB resets on server restart (use Prisma/PostgreSQL for production)

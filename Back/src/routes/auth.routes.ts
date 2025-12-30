@@ -154,17 +154,6 @@ export async function authRoutes(app: FastifyInstance) {
         return { token, user: AuthService.sanitizeUser(user) };
     });
 
-    // --- ME ---
-    app.get('/me', {
-        onRequest: [app.authenticate],
-        onResponse: [app.updateLastActivity],
-        schema: meRouteSchema
-    }, async (req: FastifyRequest, reply) => {
-        const user = await db.findUserById(req.user.id);
-        if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' });
-        return { user: AuthService.sanitizeUser(user) };
-    });
-
     // --- LOGOUT (DELETE ANONYMOUS) ---
     app.post('/logout', {
         onRequest: [app.authenticate],

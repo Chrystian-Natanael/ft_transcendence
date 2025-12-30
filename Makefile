@@ -1,39 +1,60 @@
-.PHONY: all install build dev serve clean fclean re css
+.PHONY: all up down logs clean fclean re install-local css-local dev-local build-local
 
+# Variáveis de Diretórios
 FRONT_DIR = Front
+BACK_DIR = Back
 
-all: install css build
+# --- COMANDOS DOCKER (Principal) ---
+
+# Sobe toda a aplicação (Frontend + Backend + Banco/Volumes)
+all: up
+
+# Constrói as imagens e sobe os containers em background
+up:
+	@echo "🐳 Subindo a aplicação com Docker Compose..."
 	docker compose up --build -d
+	@echo "✅ Aplicação rodando! Use 'make logs' para ver o output."
 
-install:
+# Para e remove os containers
+down:
+	@echo "🛑 Parando a aplicação..."
+	docker compose down
+
+# Mostra os logs dos containers em tempo real
+logs:
+	docker compose logs -f
+
+# --- COMANDOS DE LIMPEZA ---
+
+# Para os containers
+clean: down
+
+# Limpeza total: remove containers, volumes (banco de dados), imagens criadas e node_modules locais
+fclean: clean
+	@echo "🗑️  Removendo volumes e imagens do Docker..."
+	docker compose down -v --rmi all
+	@echo "🧹 Limpando arquivos locais..."
+	@rm -rf $(FRONT_DIR)/dist $(FRONT_DIR)/node_modules $(FRONT_DIR)/package-lock.json
+	@rm -rf $(BACK_DIR)/node_modules $(BACK_DIR)/package-lock.json
+	@rm -rf $(BACK_DIR)/dist
+
+# Reinicia tudo do zero
+re: fclean all
+
+# --- COMANDOS LOCAIS (Caso queira rodar sem Docker) ---
+
+# Instala dependências apenas do Front localmente
+install-local:
 	@cd $(FRONT_DIR) && npm install
 
-css:
+# Gera o CSS localmente (útil para autocomplete do Tailwind)
+css-local:
 	@cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify
 
-# css-watch:
-# 	@cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
+# Roda o Front localmente (sem docker)
+dev-local: install-local css-local
+	@cd $(FRONT_DIR) && FRONT_PORT=8080 npm run dev
 
-dev-local: build
-	@cd $(FRONT_DIR) && npm run css && FRONT_PORT=8080 npm run dev
-
-build:
-	@cd $(FRONT_DIR) && npm i && npm run build
-
-# dev:
-# 	@cd $(FRONT_DIR) && npx tsc --watch & cd $(FRONT_DIR) && npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
-
-# serve: css build
-# 	@cd $(FRONT_DIR) && npx http-server . -p 8080
-
-# run: css build
-# 	@cd $(FRONT_DIR) && npx http-server . -p 8080 -o
-
-clean:
-	docker compose down
-	@cd $(FRONT_DIR) && rm -rf dist
-
-fclean: clean
-	@cd $(FRONT_DIR) && rm -rf node_modules package-lock.json
-
-re: fclean all
+# Build de produção local
+build-local: install-local
+	@cd $(FRONT_DIR) && npm run build

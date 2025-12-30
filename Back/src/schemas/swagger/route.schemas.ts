@@ -168,42 +168,6 @@ export const anonymousRouteSchema = {
     }
 } as const
 
-export const meRouteSchema = {
-    tags: ['auth'],
-    summary: 'Obter usuário atual',
-    description: 'Retorna informações do usuário autenticado. Atualiza timestamp de atividade para anônimos.',
-    security: [{ bearerAuth: [] }],
-    response: {
-        200: {
-            description: 'Informações do usuário',
-            type: 'object',
-            properties: {
-                user: userResponseSchema
-            }
-        },
-        401: {
-            description: 'Token inválido ou expirado',
-            type: 'object',
-            properties: {
-                error: {
-                    type: 'string',
-                    examples: ['Token Inválido']
-                }
-            }
-        },
-        404: {
-            description: 'Usuário não encontrado (sessão expirada)',
-            type: 'object',
-            properties: {
-                error: {
-                    type: 'string',
-                    examples: ['Usuário não encontrado']
-                }
-            }
-        }
-    }
-} as const
-
 export const logoutRouteSchema = {
     tags: ['auth'],
     summary: 'Fazer logout',

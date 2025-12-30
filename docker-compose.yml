@@ -1,19 +1,51 @@
 services:
+  backend:
+    build:
+      context: ./Back
+      dockerfile: Dockerfile
+    container_name: pong_backend
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./Back:/app
+      - /app/node_modules
+      # AQUI ESTÁ A PERSISTÊNCIA DO BANCO
+      # Mapeia a pasta 'data' do backend para dentro do container
+      - ./Back/data:/app/data 
+    environment:
+      - PORT=3333
+      - JWT_SECRET=${JWT_SECRET}
+      # Se precisar acessar o banco via arquivo, aponte para /app/data/seu-banco.json
+    networks:
+      - pong-network
+    command: npm run dev
+
   frontend:
     build:
       context: ./Front
       dockerfile: Dockerfile
       args:
-        - FRONT_PORT=${FRONT_PORT}
+        - FRONT_PORT=${FRONT_PORT:-5173}
+    container_name: pong_frontend
     volumes:
-      - ./Front:/frontend
-      - /frontend/node_modules
+      - ./Front:/app
+      - /app/node_modules
     ports:
-      - "${FRONT_PORT}:${FRONT_PORT}"
+      - "${FRONT_PORT:-5173}:5173"
     environment:
       - NODE_ENV=development
+      # Para o navegador (Browser), o backend está no localhost da sua máquina
+      - VITE_API_URL=http://localhost:3333
     env_file:
       - .env
+    networks:
+      - pong-network
+    # Adicionado --host para permitir acesso externo ao container
+    command: sh -c "npm run css & npm run dev -- --host"
+    depends_on:
+      - backend
 
-
-    command: sh -c "npm run css & npm run dev"
+# Criação da rede interna para comunicação entre containers (se necessário server-to-server)
+networks:
+  pong-network:
+    driver: bridge
