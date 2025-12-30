@@ -1,4 +1,4 @@
-import { state, type Route } from './store/appState';
+import { saveState, state, type Route } from './store/appState';
 import './style.css';
 
 import { authService } from './services/authRoutes';
@@ -20,6 +20,7 @@ import * as TwoFAView from './views/twofa';
 import * as TwoFADisableView from './views/twofaDisable';
 import * as SoloIA from './views/soloIA';
 import * as Multiplayer from './views/multiplayer';
+import { profileService } from './services/profileRoutes';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 let localGameController: GameController | null = null;
@@ -191,6 +192,23 @@ window.addEventListener('popstate', (event) => {
 		}
 	}
 });
+
+const token = localStorage.getItem('token')
+
+if (state.user && token) {
+	try {
+		const user = await profileService.getProfile() as any
+		state.user = user;
+		saveState()
+	} catch {
+		navigateTo(`login`);
+		// apagar token inválido
+		localStorage.removeItem('token');
+		state.user = null;
+		saveState()
+	}
+	window.location.hash = `#dashboard`;
+}
 
 const initialRoute = (window.location.hash.replace('#', '') as Route) || 'login';
 navigateTo(initialRoute, false);

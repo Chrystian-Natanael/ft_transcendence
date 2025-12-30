@@ -199,30 +199,6 @@ export function setupProfileEvents(navigate: (route: Route) => void) {
 	});
 
 	// 4. Upload de Avatar (Mock Visual)
-// 	const profileImgContainer = document.querySelector('.group');
-// 	const fileInput = document.getElementById('upload-avatar') as HTMLInputElement;
-// 
-// 	if (profileImgContainer && fileInput) {
-// 		profileImgContainer.addEventListener('click', () => {
-// 			fileInput.click();
-// 		});
-// 
-// 		fileInput.addEventListener('change', (e) => {
-// 			const target = e.target as HTMLInputElement;
-// 			if (target.files && target.files[0]) {
-// 				const reader = new FileReader();
-// 				reader.onload = (e) => {
-// 					const img = document.getElementById('profile-img') as HTMLImageElement;
-// 					if (img && e.target?.result) {
-// 						img.src = e.target.result as string;
-// 						// Aqui você enviaria a imagem para o backend
-// 					}
-// 				};
-// 				reader.readAsDataURL(target.files[0]);
-// 			}
-// 		});
-// 	}
-
 	const profileImgContainer = document.querySelector('.group');
 
 	if (profileImgContainer) {
@@ -235,29 +211,30 @@ export function setupProfileEvents(navigate: (route: Route) => void) {
 					img.src = avatarSrc;
 				}
 
+				
 				// Salvar no state local (para persistir visualmente)
 				if (state.user) {
 					state.user.avatar = avatarSrc;
 					saveState();
 				}
-
-				// TODO: Enviar para o backend quando tiver o endpoint
-				// try {
-				//	 await profileService.updateAvatar({ avatarId });
-				//	 showModal({
-				//		 title: "Avatar atualizado!",
-				//		 message: "Seu novo avatar foi salvo.",
-				//		 type: "success",
-				//		 confirmText: "OK"
-				//	 });
-				// } catch (error: any) {
-				//	 showModal({
-				//		 title: "Erro",
-				//		 message: error.message || "Não foi possível atualizar o avatar.",
-				//		 type: "danger",
-				//		 confirmText: "OK"
-				//	 });
-				// }
+				
+				try {
+					console.log("Avatar selecionado:", avatarId, avatarSrc);
+					await profileService.updateAvatar({ avatarId });
+					showModal({
+						title: "Avatar atualizado!",
+						message: "Seu novo avatar foi salvo.",
+						type: "success",
+						confirmText: "OK"
+					});
+				} catch (error: any) {
+					showModal({
+						title: "Erro",
+						message: error.message || "Não foi possível atualizar o avatar.",
+						type: "danger",
+						confirmText: "OK"
+					});
+				}
 			});
 		});
 	}

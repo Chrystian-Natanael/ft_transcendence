@@ -15,12 +15,10 @@ interface RankedQueueItem {
 let rankedQueue: RankedQueueItem[] = [];
 const pendingInvites = new Map<string, number>();
 
-// HELPER CORRIGIDO: Usa '==' para aceitar string ou number
+// HELPER: Busca socket pelo ID do usuário armazenado em socket.data.id
 function findSocketByUserId(io: Server, userId: number) {
-    // console.log(`[DEBUG] Buscando socket para UserID: ${userId}`);
-    
     for (const [_, socket] of io.sockets.sockets) {
-        // A mágica está aqui: '==' em vez de '==='
+        // Usa '==' para garantir compatibilidade entre string e number
         if (socket.data?.id == userId) {
             return socket;
         }
@@ -37,40 +35,32 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
         return user;
     };
 
-    // --- ROTA DE MATCHMAKING (GET) ---
+    // --- ROTA DE MATCHMAKING (RANKED) ---
     app.get('/ranked', {
         onRequest: [app.authenticate],
         schema: rankedMatchmakingRouteSchema
     }, async (req: FastifyRequest, reply) => {
         const currentUser = (await verifyUser(req, reply))!;
         
-        // 1. Remove o usuário atual da fila se ele já estiver lá (para evitar jogar contra si mesmo)
+        // 1. Remove usuário atual da fila (limpeza preventiva)
         rankedQueue = rankedQueue.filter(item => item.userId !== currentUser.id);
 
-        const SCORE_RANGE = 10000; // Range alto para facilitar testes
+        const SCORE_RANGE = 10000; 
 
-        // 2. Loop de busca com AUTO-LIMPEZA
-        // Vamos procurar até achar um oponente válido ou acabar a fila
         let opponentIndex = -1;
         
         while (true) {
-            // Tenta achar alguém compatível
             opponentIndex = rankedQueue.findIndex(opponent => 
                 Math.abs(opponent.score - (currentUser.score || 0)) <= SCORE_RANGE
             );
 
-            // Se não achou ninguém, para o loop
             if (opponentIndex === -1) break;
 
             const opponentItem = rankedQueue[opponentIndex];
-
-            // ACHOU ALGUÉM! Agora verifica se o socket dele está vivo.
             const opponentSocket = findSocketByUserId(io, opponentItem.userId);
 
             if (opponentSocket) {
-                // SUCESSO! Oponente existe e está conectado.
-                
-                // Remove o oponente da fila
+                // SUCESSO!
                 rankedQueue.splice(opponentIndex, 1);
 
                 const roomId = `ranked_${Math.min(currentUser.id, opponentItem.userId)}_${Math.max(currentUser.id, opponentItem.userId)}_${Date.now()}`;
@@ -82,9 +72,8 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
                     message: "Oponente encontrado!"
                 });
 
-                console.log(`[MATCH] ${currentUser.nick} vs ${opponentItem.userId} na sala ${roomId}`);
+                console.log(`[MATCH] ${currentUser.nick} vs ${opponentItem.userId}`);
 
-                // Retorna para o usuário atual (via HTTP)
                 return reply.send({
                     status: 'match_found',
                     roomId: roomId,
@@ -92,22 +81,16 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
                     message: 'Oponente encontrado! Conectando...'
                 });
             } else {
-                // FALHA: Oponente estava na fila, mas o socket sumiu (Refresh/Desconectou)
-                console.log(`[CLEANUP] Removendo usuário fantasma ${opponentItem.userId} da fila.`);
-                
-                // Remove esse usuário morto da fila e CONTINUA o loop para tentar o próximo
+                // Limpeza de socket fantasma
                 rankedQueue.splice(opponentIndex, 1);
             }
         }
 
-        // Se chegou aqui, não achou ninguém válido
         rankedQueue.push({
             userId: currentUser.id,
             score: currentUser.score || 0,
             timestamp: Date.now()
         });
-
-        console.log(`[QUEUE] ${currentUser.nick} entrou na fila. Total esperando: ${rankedQueue.length}`);
 
         return reply.send({
             status: 'queued',
@@ -115,40 +98,48 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
         });
     });
 
-    // ... (Mantenha as rotas de invite/casual iguais) ...
     // --- ROTA: CONVIDAR AMIGO (CASUAL) ---
     app.post('/casual/invite', {
         onRequest: [app.authenticate],
-        schema: inviteFriendRouteSchema,
-        preHandler: [app.validateBody(GameInviteSchema)]
+        // Se tiver schema de validação, adicione aqui (ex: schema: inviteFriendRouteSchema)
     }, async (req: FastifyRequest, reply) => {
-        const { nick } = req.body as GameInviteInput;
         const sender = (await verifyUser(req, reply))!;
+        
+        // Tipagem simples do corpo da requisição
+        const { nick } = req.body as { nick: string };
 
-        const target = db.findUserByNick(nick);
-        if (!target) return reply.code(404).send({ error: 'Usuário não encontrado' });
-
-        if (!sender.friends.includes(target.id)) {
-            return reply.code(403).send({ error: 'Você só pode convidar amigos.' });
+        if (!nick) {
+            return reply.code(400).send({ error: 'Nick do amigo é obrigatório.' });
         }
 
+        // 1. Buscar usuário alvo
+        const target = db.findUserByNick(nick);
+
+        if (!target) {
+            return reply.code(404).send({ error: 'Usuário não encontrado.' });
+        }
+
+        if (target.id === sender.id) {
+            return reply.code(400).send({ error: 'Você não pode convidar a si mesmo.' });
+        }
+
+        // 2. Salvar convite na memória
+        // Chave = REMETENTE_ID:DESTINATARIO_ID
         const inviteKey = `${sender.id}:${target.id}`;
         pendingInvites.set(inviteKey, Date.now());
 
-        // 3: Enviar evento Socket para o convidado ver o popup em tempo real
+        // 3. Notificar o alvo em Tempo Real (Socket.IO)
         const targetSocket = findSocketByUserId(io, target.id);
+        
         if (targetSocket) {
-            targetSocket.emit('gameInvite', {
-                from: sender.nick,
-                fromId: sender.id,
-                message: `${sender.nick} te convidou para uma partida!`
+            console.log(`[INVITE] Enviando evento socket para ${target.nick}`);
+            targetSocket.emit('inviteReceived', {
+                senderNick: sender.nick,
+                senderAvatar: sender.avatar || `https://ui-avatars.com/api/?name=${sender.nick}&background=random`
             });
         }
 
-        return reply.send({
-            status: 'invited',
-            message: `Convite enviado para ${target.nick}.`
-        });
+        return reply.send({ message: `Convite enviado para ${target.nick}!` });
     });
 
     // --- ROTA: RESPONDER CONVITE (CASUAL) ---
@@ -158,26 +149,26 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
         preHandler: [app.validateBody(GameResponseSchema)]
     }, async (req: FastifyRequest, reply) => {
         const { nick, action } = req.body as GameResponseInput;
-        const currentUser = (await verifyUser(req, reply))!; // Quem aceitou
+        const currentUser = (await verifyUser(req, reply))!; // Quem aceitou/recusou
 
         const sender = db.findUserByNick(nick); // Quem convidou
         if (!sender) return reply.code(404).send({ error: 'Remetente não encontrado' });
 
+        // A chave é: REMETENTE:DESTINATARIO (sender:currentUser)
         const inviteKey = `${sender.id}:${currentUser.id}`;
         
-        if (!pendingInvites.has(inviteKey)) {
-            return reply.code(400).send({ error: 'Convite expirado ou inválido.' });
-        }
+        // Verifica se existe convite pendente (opcional, mas recomendado)
+        // if (!pendingInvites.has(inviteKey)) return reply.code(400)...
 
         pendingInvites.delete(inviteKey);
 
+        const senderSocket = findSocketByUserId(io, sender.id);
+
         if (action === 'decline') {
-            // Avisar o remetente que foi recusado
-            const senderSocket = findSocketByUserId(io, sender.id);
             if (senderSocket) {
+                // CORREÇÃO: Payload compatível com frontend
                 senderSocket.emit('inviteDeclined', { 
-                    by: currentUser.nick,
-                    message: 'Seu convite foi recusado.'
+                    nick: currentUser.nick // O frontend espera 'nick' para mostrar quem recusou
                 });
             }
             return reply.send({ status: 'declined', message: 'Convite recusado.' });
@@ -186,30 +177,27 @@ export async function gameRoutes(app: FastifyInstance, options: { io: Server }) 
         if (action === 'accept') {
             const roomId = `casual_${sender.id}_${currentUser.id}_${Date.now()}`;
 
-            // 4: Avisar quem convidou (Sender) que foi aceito e passar o roomId
-            const senderSocket = findSocketByUserId(io, sender.id);
             if (senderSocket) {
+                // Avisa quem convidou que o jogo vai começar
                 senderSocket.emit('inviteAccepted', { 
                     roomId, 
-                    opponentId: currentUser.id,
-                    message: 'Convite aceito! Entrando na sala...'
+                    opponentId: currentUser.id
                 });
             }
 
-            // Retorna para quem aceitou (CurrentUser) conectar também
+            // Retorna roomId para quem aceitou (via resposta HTTP)
             return reply.send({
                 status: 'accepted',
                 roomId: roomId,
-                opponentId: sender.id,
-                message: 'Convite aceito! Iniciando jogo...'
+                opponentId: sender.id
             });
         }
     });
 
+    // Sair da fila
     app.post('/queue/leave', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const userId = req.user.id;
-    rankedQueue = rankedQueue.filter(u => u.userId !== userId);
-    console.log(`[QUEUE] Usuário ${userId} saiu da fila manualmente.`);
-    return reply.send({ message: 'Saiu da fila.' });
-});
+        const userId = req.user.id;
+        rankedQueue = rankedQueue.filter(u => u.userId !== userId);
+        return reply.send({ message: 'Saiu da fila.' });
+    });
 }

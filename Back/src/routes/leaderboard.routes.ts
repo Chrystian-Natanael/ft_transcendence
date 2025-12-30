@@ -13,7 +13,7 @@ export async function leaderboardRoutes(app: FastifyInstance) {
             id: u.id,
             name: u.name,
             nick: u.nick,
-            avatar: u.avatar || 'src/assets/perfil-sla.png',
+            avatar: u.avatar || 'src/assets/Profile_images/Potato_default.jpg',
             score: u.score || 0, 
             gang: u.gang,
             isOnline: u.isOnline ?? false,

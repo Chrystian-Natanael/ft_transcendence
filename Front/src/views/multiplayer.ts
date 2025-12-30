@@ -2,10 +2,10 @@ import { Button } from "../components/Button";
 import { state, type Route } from "../store/appState";
 import { api } from "../services/api"; 
 import { friendsService } from "../services/friendsRoutes";
-import { getSocket, multiplayerService } from "../services/gameSocket"; // IMPORTANTE: Importar o socket
+import { getSocket, multiplayerService } from "../services/gameSocket";
 import { showModal } from "../utils/modalManager";
 import { initGameSocket } from "../services/gameSocket";
-import { setTransitioning } from "../services/gameSocket"; // Importe a nova função
+import { setTransitioning } from "../services/gameSocket";
 
 // imgs
 import bgPotatoes from "../assets/bg-login-potatoes.png";
@@ -35,6 +35,35 @@ function formatNick(nick: string): string {
     if (!nick) return 'Desconhecido';
     if (nick.length <= 20) return nick;
     return nick.substring(0, 20) + '...';
+}
+
+function renderWaitingOverlay(nick: string): string {
+    return `
+        <div id="waiting-invite-overlay" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm rounded-xl animate-fade-in">
+            <div class="flex flex-col items-center gap-4 p-8 bg-slate-900 border border-white/10 rounded-xl shadow-2xl max-w-sm w-full">
+                <div class="relative">
+                    <div class="w-16 h-16 rounded-full bg-slate-800 overflow-hidden border-2 border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)]">
+                         <img src="https://ui-avatars.com/api/?name=${nick}&background=random" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center">
+                        <div class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                </div>
+                
+                <h3 class="text-xl font-bold text-white tracking-wider">AGUARDANDO...</h3>
+                <p id="waiting-status-text" class="text-gray-400 text-center text-sm">
+                    Esperando <span class="text-yellow-400 font-bold">${nick}</span> aceitar o desafio.
+                </p>
+
+                ${Button({
+                    id: "btn-cancel-invite",
+                    text: "CANCELAR",
+                    variant: "ghost",
+                    className: "mt-4 text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs"
+                })}
+            </div>
+        </div>
+    `;
 }
 
 function renderInviteItem(invite: InviteItem): string {
@@ -93,7 +122,7 @@ function renderRankedColumn(invites: InviteItem[]): string {
             </div>
             <div class="bg-slate-900/60 backdrop-blur-md p-4 md:p-6 rounded-xl border border-white/10 shadow-xl flex-1 flex flex-col">
                 <h4 class="text-sm uppercase tracking-widest text-gray-400 mb-3">Convites Pendentes</h4>
-                <div class="flex-1 overflow-y-auto pr-1 md:pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-cyan-600/30 [&::-webkit-scrollbar-thumb]:rounded">
+                <div id="invites-list-container" class="flex-1 overflow-y-auto pr-1 md:pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-cyan-600/30 [&::-webkit-scrollbar-thumb]:rounded">
                     ${invitesHtml}
                 </div>
             </div>
@@ -160,21 +189,24 @@ function renderCasualColumn(friends: Player[], error?: boolean): string {
     }
 
     return `
-        <div class="w-full lg:w-1/2 flex flex-col gap-4 h-auto lg:h-full">
-            <div class="bg-slate-900/60 backdrop-blur-md p-6 rounded-xl border border-white/10 shadow-xl">
-                <h3 class="text-lg tracking-widest font-bold text-white flex items-center gap-2">🎮 AMISTOSO</h3>
-                <p class="text-sm text-gray-400 mt-1">Convide um amigo para um x1 sem perder pontos.</p>
-            </div>
-            <div class="bg-slate-900/60 backdrop-blur-md p-4 md:p-6 rounded-xl border border-white/10 shadow-xl flex-1 flex flex-col">
-                <h4 class="text-sm uppercase tracking-widest text-gray-400 mb-3">Amigos Online</h4>
-                <div class="flex-1 overflow-y-auto pr-1 md:pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-cyan-600/30 [&::-webkit-scrollbar-thumb]:rounded">
-                    ${contentHtml}
+        <div class="w-full lg:w-1/2 flex flex-col gap-4 h-auto lg:h-full relative">
+            <div id="casual-column-content" class="h-full flex flex-col gap-4 relative">
+                <div class="bg-slate-900/60 backdrop-blur-md p-6 rounded-xl border border-white/10 shadow-xl">
+                    <h3 class="text-lg tracking-widest font-bold text-white flex items-center gap-2">🎮 AMISTOSO</h3>
+                    <p class="text-sm text-gray-400 mt-1">Convide um amigo para um x1 sem perder pontos.</p>
+                </div>
+                <div class="bg-slate-900/60 backdrop-blur-md p-4 md:p-6 rounded-xl border border-white/10 shadow-xl flex-1 flex flex-col">
+                    <h4 class="text-sm uppercase tracking-widest text-gray-400 mb-3">Amigos Online</h4>
+                    <div class="flex-1 overflow-y-auto pr-1 md:pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-cyan-600/30 [&::-webkit-scrollbar-thumb]:rounded">
+                        ${contentHtml}
+                    </div>
                 </div>
             </div>
         </div>
     `;
 }
 
+// --- FUNÇÃO PRINCIPAL ATUALIZADA ---
 export async function getMultiplayerHtml() {
     const userGang = state.user?.gang || 'potatoes';
     const backgroundImage = backgroundByGang[userGang];
@@ -184,21 +216,39 @@ export async function getMultiplayerHtml() {
         : 'drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]';
 
     let casualFriends: Player[] = [];
-    const rankedInvites: InviteItem[] = []; 
+    let rankedInvites: InviteItem[] = [];
     let hasError = false;
 
-    // TENTA BUSCAR DADOS
+    // 1. Buscar Amigos (usando o modelo com mapeamento)
     try {
         const friendsList = await friendsService.listFriends();
-        casualFriends = friendsList.map((f: any) => ({
-            id: f.id,
-            nick: f.nick,
-            avatar: f.avatar || `https://ui-avatars.com/api/?name=${f.nick}&background=random`,
-            isOnline: f.isOnline === true
-        })).sort((a, b) => Number(b.isOnline) - Number(a.isOnline));
+        casualFriends = friendsList.map((response: any): Player => ({
+            id: response.id,
+            nick: response.nick,
+            avatar: response.avatar || `https://ui-avatars.com/api/?name=${response.nick}&background=random`,
+            isOnline: true, // Forçando online conforme seu pedido
+        }));
+        
+        casualFriends.sort((a, b) => Number(b.isOnline) - Number(a.isOnline));
     } catch (error) {
-        console.error("Erro ao carregar lista de amigos:", error);
+        console.error('Erro ao listar amigos:', error);
         hasError = true;
+    }
+
+    // 2. Buscar Convites Pendentes (Modelo Híbrido HTTP)
+    try {
+        const invitesResponse = await multiplayerService.listGameInvites();
+        
+        // Mapeamento seguro seguindo o modelo
+        if (Array.isArray(invitesResponse)) {
+            rankedInvites = invitesResponse.map((invite: any): InviteItem => ({
+                senderNick: invite.senderNick,
+                senderAvatar: invite.senderAvatar || `https://ui-avatars.com/api/?name=${invite.senderNick}&background=random`
+            }));
+        }
+    } catch (inviteError) {
+        console.warn("Erro ao buscar convites pendentes via HTTP:", inviteError);
+        // Não marcamos hasError aqui para não quebrar a tela toda só pelos convites
     }
 
     return `
@@ -226,40 +276,72 @@ export async function getMultiplayerHtml() {
 export function setupMultiplayerEvents(navigate: (route: Route) => void) {
     initGameSocket();
 
+    // Listener para o botão de voltar
     document.getElementById('btn-multiplayer-back')?.addEventListener('click', async () => {
-    try {
-        await multiplayerService.leaveQueue(); 
-    } catch (e) {
-        console.warn("Falha ao sair da fila:", e);
-    }
-    navigate('dashboard');
-});
+        try {
+            await multiplayerService.leaveQueue(); 
+        } catch (e) {
+            console.warn("Falha ao sair da fila:", e);
+        }
+        navigate('dashboard');
+    });
+
     const viewRoot = document.getElementById('multiplayer-view-root');
+    const casualContainer = document.getElementById('casual-column-content');
     
-    // --- LÓGICA DO SOCKET (IMPORTANTE PARA QUEM ESPERA NA FILA) ---
+    // --- LÓGICA DO SOCKET ---
     const socket = getSocket();
     if (socket) {
-        // Remove listeners antigos para evitar duplicidade
         socket.off('matchFound');
         socket.off('inviteAccepted');
+        socket.off('inviteDeclined'); 
+        socket.off('inviteReceived'); 
 
-        // Evento quando o sistema encontra um oponente para você
+        // 1. Partida Ranqueada encontrada
         socket.on('matchFound', (data: { roomId: string, opponentId: number }) => {
             console.log("Partida encontrada via Socket!", data);
-            
-            // Salva o ID da sala para a tela do jogo usar
             localStorage.setItem('currentRoomId', data.roomId);
-            
             setTransitioning(true);
-            // Navega para o jogo
             navigate('game');
         });
 
-        // Evento quando alguém aceita seu convite casual
+        // 2. Convite aceito
         socket.on('inviteAccepted', (data: { roomId: string }) => {
             console.log("Convite aceito!", data);
+            document.getElementById('waiting-invite-overlay')?.remove();
+            
             localStorage.setItem('currentRoomId', data.roomId);
+            setTransitioning(true);
             navigate('game');
+        });
+
+        // 3. Convite recusado
+        socket.on('inviteDeclined', (data: { nick: string }) => {
+            console.log("Convite recusado por:", data.nick);
+            const statusText = document.getElementById('waiting-status-text');
+            const cancelBtn = document.getElementById('btn-cancel-invite');
+            const overlay = document.getElementById('waiting-invite-overlay');
+
+            if (statusText) {
+                statusText.innerHTML = `<span class="text-red-500 font-bold">${data.nick}</span> recusou o convite.`;
+            }
+            
+            if (cancelBtn) {
+                cancelBtn.innerText = "FECHAR";
+                cancelBtn.onclick = () => overlay?.remove();
+            }
+        });
+
+        // 4. Recebeu convite em tempo real
+        socket.on('inviteReceived', (invite: InviteItem) => {
+            console.log("Convite recebido:", invite);
+             const listContainer = document.getElementById('invites-list-container');
+             if (listContainer && listContainer.innerHTML.includes('Ninguém te chamou ainda')) {
+                 listContainer.innerHTML = '';
+             }
+             if (listContainer) {
+                 listContainer.insertAdjacentHTML('afterbegin', renderInviteItem(invite));
+             }
         });
     }
 
@@ -267,6 +349,12 @@ export function setupMultiplayerEvents(navigate: (route: Route) => void) {
 
     viewRoot.addEventListener('click', async (e) => {
         const target = e.target as HTMLElement;
+
+        // --- CANCELAR CONVITE (Overlay) ---
+        if (target.closest('#btn-cancel-invite')) {
+            document.getElementById('waiting-invite-overlay')?.remove();
+            return;
+        }
 
         // --- RANKED MATCHMAKING ---
         const btnRanked = target.closest('#btn-ranked-play') as HTMLButtonElement;
@@ -283,15 +371,12 @@ export function setupMultiplayerEvents(navigate: (route: Route) => void) {
                 
                 if (response.status === 'match_found') {
                     if (statusText) statusText.textContent = "Partida encontrada! Redirecionando...";
-                    
-                    // Salva o ID da sala
                     localStorage.setItem('currentRoomId', response.roomId);
                     setTransitioning(true);
                     setTimeout(() => navigate('game'), 500);
                 } else {
                     if (statusText) statusText.textContent = response.message || "Na fila. Aguarde...";
                     btnRanked.innerText = "NA FILA...";
-                    // AGORA: O socket.on('matchFound') acima vai lidar com a resposta quando o oponente chegar.
                 }
             } catch (error: any) {
                 console.error(error);
@@ -326,6 +411,14 @@ export function setupMultiplayerEvents(navigate: (route: Route) => void) {
                     navigate('game');
                 } else if (cardId) {
                     document.getElementById(cardId)?.remove();
+                    
+                    const container = document.getElementById('invites-list-container');
+                    if (container && container.children.length === 0) {
+                        container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-gray-400 italic gap-2 py-8 opacity-60">
+                            <span class="text-2xl">🕰️</span>
+                            <p>Ninguém te chamou ainda...</p>
+                        </div>`;
+                    }
                 }
             } catch (error: any) {
                 showModal({
@@ -339,27 +432,28 @@ export function setupMultiplayerEvents(navigate: (route: Route) => void) {
             return;
         }
 
-        // --- CONVIDAR AMIGO ---
+        // --- CONVIDAR AMIGO (DESAFIAR) ---
         const inviteFriendBtn = target.closest('.btn-friend-invite') as HTMLElement;
         if (inviteFriendBtn) {
-            if (inviteFriendBtn.hasAttribute('disabled') || inviteFriendBtn.classList.contains('bg-gray-600')) return;
+            if (inviteFriendBtn.hasAttribute('disabled')) return;
 
             const nick = inviteFriendBtn.dataset.nick;
             if (!nick) return;
 
-            inviteFriendBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            inviteFriendBtn.classList.add('bg-gray-600', 'cursor-not-allowed', 'opacity-70');
-            inviteFriendBtn.textContent = 'Enviando...';
+            inviteFriendBtn.textContent = '...';
 
             try {
                 await api.post('/game/casual/invite', { nick });
-                inviteFriendBtn.textContent = 'Convidado!';
-            } catch (error: any) {
-                console.error(error);
-                inviteFriendBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                inviteFriendBtn.classList.remove('bg-gray-600', 'cursor-not-allowed', 'opacity-70');
+                
+                if (casualContainer) {
+                    casualContainer.insertAdjacentHTML('beforeend', renderWaitingOverlay(nick));
+                }
+                
                 inviteFriendBtn.textContent = 'Desafiar';
 
+            } catch (error: any) {
+                console.error(error);
+                inviteFriendBtn.textContent = 'Desafiar';
                 showModal({
                     title: "Erro",
                     message: "Não foi possível enviar o convite.",

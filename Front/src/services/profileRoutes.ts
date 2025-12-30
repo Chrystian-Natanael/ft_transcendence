@@ -4,6 +4,10 @@ interface UpdateNickPayload {
 	nick: string;
 }
 
+interface UpdateAvatarPayload {
+	avatarId: string;
+}
+
 interface UpdateNickResponse {
 	message: string;
 	user: {
@@ -20,8 +24,14 @@ interface UpdateNickResponse {
 
 export const profileService = {
 	updateProfile: (data: UpdateNickPayload): Promise<UpdateNickResponse> =>
-		api.request<UpdateNickResponse>("/users/me", {
-			method: "PATCH",
-			body: data
-		}),
+		api.patch<UpdateNickResponse>("/users/me", data),
+		// api.request<UpdateNickResponse>("/users/me", {
+		// 	method: "PATCH",
+		// 	body: data
+		// }),
+	
+	updateAvatar: (data: UpdateAvatarPayload): Promise<UpdateAvatarResponse> =>
+		api.patch<UpdateAvatarResponse>("/users/me/avatar", data),
+	
+	getProfile: () => api.get("/users/me"),
 };

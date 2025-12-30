@@ -21,7 +21,7 @@ function sanitizeFriends(user: User) {
         nick: user.nick,
         gang: user.gang,
         isOnline: user.isOnline ?? false, 
-        avatar: user.avatar || 'src/assets/perfil-sla.png' 
+        avatar: user.avatar || 'src/assets/Profile_images/Potato_default.jpg' 
     };
 }
 
@@ -29,7 +29,7 @@ function sanitizeRequestsFriends(user: User) {
     return {
         id: user.id,
         nick: user.nick,
-        avatar: user.avatar || 'src/assets/perfil-sla.png'
+        avatar: user.avatar || 'src/assets/Profile_images/Potato_default.jpg'
     };
 }
 

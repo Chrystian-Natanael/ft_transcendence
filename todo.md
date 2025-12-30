@@ -2,24 +2,19 @@ Tela de perfil
 	Arrumar estatísticas
 
 JOGO:
-	arrumar o lag
 	arrumar a personalização do jogo
-	verificar esquemas de pontuação do fim da partida.
-	Encerrar o jogo de ambos quando um se desconectar
-	Retirar o botão de jogar novamente
 
 Front end
 	Ao entrar na página e já tiver um token salvo 
 		verificar se aquele token ainda está válido
 		se não, apagar o token e ir para a tela de login
-	
-	Arrumar caps lock como input dos movimentos
 
 Back end
 	Verificação de online
 		Salvar o momento da última interação com o back end
 		Na rota de listar um usuário falar se ele tá online baseado na última interação. 5 minutos fica logado.
 	Fazer a foto de perfil
+		Tirar gameAvatar de tudo
 
 Fazer componentes
 	componente texto para cores baseado em gangues
@@ -27,12 +22,6 @@ Fazer componentes
 Outras coisas
 	Docker
 	readme
-
-Rotas /game testar:
-	/casual/invite - Rota que invita um AMIGO para um jogo e te redireciona para a tela de aguardando oponente
-	/casual/response - Envia uma resposta (accept, decline ) para um convite de jogo (nick)
-	
-
 
 
 BANCO DE DADOS:

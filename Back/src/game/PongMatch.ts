@@ -403,12 +403,10 @@ public handleDisconnection(socketId: string) {
       const loserUser = await db.findUserById(loserId);
 
       if (winnerUser && loserUser) {
-          winnerUser.score = (winnerUser.score || 0) + POINTS_WIN;
-          loserUser.score = Math.max(0, (loserUser.score || 0) - POINTS_LOSE);
+          winnerUser.setScore((winnerUser.score || 0) + POINTS_WIN);
+          loserUser.setScore(Math.max(0, (loserUser.score || 0) - POINTS_LOSE));
 
           console.log(`[RANKED] ${winnerUser.nick} (+${POINTS_WIN}) vs ${loserUser.nick} (-${POINTS_LOSE})`);
-          
-          // Num banco SQL, aqui você faria: await db.updateScore(winnerId, newScore);
       }
   }
 }

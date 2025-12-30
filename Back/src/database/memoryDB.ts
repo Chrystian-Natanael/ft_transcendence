@@ -1,4 +1,4 @@
-export interface User {
+export class User {
     id: number;
     name: string;
     nick: string;
@@ -6,7 +6,7 @@ export interface User {
     password?: string;
     isAnonymous: boolean;
     lastActivity?: number;
-    gang: 'potatoes' | 'tomatoes'
+    gang: 'potatoes' | 'tomatoes';
     twoFactorEnabled?: boolean;
     twoFactorSecret?: string;
     backupCodes?: string[];
@@ -17,6 +17,70 @@ export interface User {
     isOnline?: boolean;
     avatar?: string;
     gameAvatar?: string;
+
+    constructor(data: Omit<User, 'id'> & { id: number }) {
+        this.id = data.id;
+        this.name = data.name;
+        this.nick = data.nick;
+        this.email = data.email;
+        this.password = data.password;
+        this.isAnonymous = data.isAnonymous;
+        this.lastActivity = data.lastActivity;
+        this.gang = data.gang;
+        this.twoFactorEnabled = data.twoFactorEnabled;
+        this.twoFactorSecret = data.twoFactorSecret;
+        this.backupCodes = data.backupCodes;
+        this.score = data.score;
+        this.friends = data.friends;
+        this.friendRequestsSent = data.friendRequestsSent;
+        this.friendRequestsReceived = data.friendRequestsReceived;
+        this.isOnline = data.isOnline;
+        this.avatar = data.avatar;
+        this.gameAvatar = data.gameAvatar;
+    }
+
+    // Métodos setters
+    setName(name: string): void {
+        this.name = name;
+    }
+
+    setNick(nick: string): void {
+        this.nick = nick;
+    }
+
+    setEmail(email: string): void {
+        this.email = email;
+    }
+
+    setPassword(password: string): void {
+        this.password = password;
+    }
+
+    setScore(score: number): void {
+        this.score = score;
+    }
+
+    setGang(gang: 'potatoes' | 'tomatoes'): void {
+        this.gang = gang;
+    }
+
+    setOnline(isOnline: boolean): void {
+        this.isOnline = isOnline;
+    }
+
+    addFriend(friendId: number): void {
+        if (!this.friends.includes(friendId)) {
+            this.friends.push(friendId);
+        }
+    }
+
+    removeFriend(friendId: number): void {
+        this.friends = this.friends.filter(id => id !== friendId);
+    }
+
+    setAvatar(avatar: string): void {
+        this.avatar = avatar;
+    }
 }
 
 class MemoryDatabase {
@@ -64,7 +128,7 @@ class MemoryDatabase {
     }
 
     public addUser(data: Omit<User, 'id'>): User {
-        const newUser: User = { ...data, id: this.nextId++ };
+        const newUser = new User({ ...data, id: this.nextId++ });
         this.users.push(newUser);
         return newUser;
     }

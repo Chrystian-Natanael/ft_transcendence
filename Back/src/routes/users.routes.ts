@@ -34,4 +34,48 @@ export async function usersRoutes(app: FastifyInstance) {
 			token: token
 		})
 	})
+
+	app.patch('/me/avatar', {
+		onRequest: [app.authenticate],
+		// schema: updateAvatarRouteSchema,
+		// preHandler: app.validateBody(avatarSchema)
+	}, async (req, reply) => {
+		const { avatarId } = req.body as { avatarId: string };
+		
+		const user = await db.findUserById(req.user.id);
+		if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' });
+		
+		// Validar se o ID é válido (de uma lista conhecida)
+		// const validAvatarIds = ['potato-1', 'potato-2', 'potato-3', 'potato-4', 'potato-5', 'potato-6', 'potato-7', 'tomato-1', 'tomato-2', 'tomato-3', 'tomato-4', 'tomato-5', 'tomato-6'];
+		// if (!validAvatarIds.includes(avatarId)) {
+		// 	return reply.code(400).send({ error: 'Avatar ID inválido' });
+		// }
+		
+		user.setAvatar(avatarId);
+
+		console.log(`User ${user.nick} updated avatar to ${avatarId}`);
+		
+		return reply.code(200).send({
+			message: 'Avatar atualizado com sucesso',
+			user: AuthService.sanitizeUser(user)
+		});
+	});
+
+	app.get('/me', {
+		onRequest: [app.authenticate],
+	}, async (req, reply) => {
+		const user = await db.findUserById(req.user.id);
+		if (!user) return reply.code(404).send({ error: 'Usuário não encontrado' });
+
+		return reply.send({
+			user: AuthService.sanitizeUser(user),
+			profile: {
+				avatar: user.avatar || null,
+				gameAvatar: user.gameAvatar || null,
+				score: user.score || 0,
+				wins: user.wins || 0,
+				losses: user.losses || 0,
+			}
+		});
+	});
 }

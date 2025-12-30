@@ -15,12 +15,12 @@ import PowerUpBigger from '../assets/PowerUp_Bigger.png';
 import PowerUpPepper from '../assets/PowerUp_Pepper.png';
 import PowerUpShield from '../assets/PowerUpShield.png';
 
+import imgAIDown from '../assets/moves/AI_Down.png';
+import imgAIUp from '../assets/moves/AI_Up.png';
 import imgPotatoDown from '../assets/moves/Potato_Down.png';
 import imgPotatoUp from '../assets/moves/Potato_Up.png';
 import imgTomatoDown from '../assets/moves/Tomato_Down.png';
 import imgTomatoUp from '../assets/moves/Tomato_Up.png';
-import imgAIUp from '../assets/moves/AI_Up.png';
-import imgAIDown from '../assets/moves/AI_Down.png';
 
 
 import { getDefaultAvatar } from "@/components/AvatarOptions";
@@ -301,13 +301,13 @@ export class GameController {
     private handleInputSocket = (e: KeyboardEvent) => {
         if (e.repeat) return;
         let direction = '';
-        if (e.key === 'ArrowUp' || e.key === 'w') direction = 'UP';
-        if (e.key === 'ArrowDown' || e.key === 's') direction = 'DOWN';
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' ) direction = 'UP';
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' ) direction = 'DOWN';
         if (direction && this.socket) this.socket.emit('movePaddle', { direction });
     };
 
     private handleInputUpSocket = (e: KeyboardEvent) => {
-        if (['ArrowUp', 'w', 'ArrowDown', 's'].includes(e.key) && this.socket) {
+        if (['ArrowUp', 'w', 'ArrowDown', 's', 'W', 'S'].includes(e.key) && this.socket) {
              this.socket.emit('movePaddle', { direction: 'STOP' });
         }
     };
@@ -315,8 +315,8 @@ export class GameController {
     private handleInputLocal = (e: KeyboardEvent) => {
         if (e.repeat) return;
         let direction: 'UP' | 'DOWN' | '' = '';
-        if (e.key === 'ArrowUp' || e.key === 'w') direction = 'UP';
-        if (e.key === 'ArrowDown' || e.key === 's') direction = 'DOWN';
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') direction = 'UP';
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') direction = 'DOWN';
         if (direction && this.localEngine) {
             this.p1LastDirection = direction;
             this.localEngine.movePaddle(direction);
@@ -324,7 +324,7 @@ export class GameController {
     };
 
     private handleInputUpLocal = (e: KeyboardEvent) => {
-        if (['ArrowUp', 'w', 'ArrowDown', 's'].includes(e.key) && this.localEngine) {
+        if (['ArrowUp', 'w', 'ArrowDown', 's', 'W', 'S'].includes(e.key) && this.localEngine) {
              this.localEngine.movePaddle('STOP');
         }
     };

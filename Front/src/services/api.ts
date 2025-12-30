@@ -62,5 +62,8 @@ export const api = {
     delete: <T>(endpoint: string, body: any, options?: RequestOptions) => 
         fetchWrapper<T>(endpoint, { ...options, method: "DELETE", body }),
 
+    patch: <T>(endpoint: string, body: any, options?: RequestOptions) => 
+        fetchWrapper<T>(endpoint, { ...options, method: "PATCH", body }),
+
     request: fetchWrapper
 };
