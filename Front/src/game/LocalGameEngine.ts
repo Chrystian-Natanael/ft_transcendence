@@ -2,8 +2,13 @@ import { state } from '../store/appState';
 import type { GameState } from '../types/game';
 import { PowerUpType } from '../types/game';
 
-import imgBlueBall from '../assets/blueball.png';
 import imgRedBall from '../assets/redball.png';
+import aiLvl1 from '../assets/Profile_images/AI_LVL_1.jpg';
+import aiLvl2 from '../assets/Profile_images/AI_LVL_2.jpg';
+import aiLvl3 from '../assets/Profile_images/AI_LVL_3.jpg';
+import imgProfileDefaultTomato from '../assets/Profile_images/Tomato_default.jpg';
+import imgProfileDefaultPotato from '../assets/Profile_images/Potato_default.jpg';
+
 
 // AI Profile images by difficulty
 
@@ -15,10 +20,6 @@ const MAX_SPEED = 25;
 const WIN_SCORE = 5;
 const DEFAULT_PADDLE_HEIGHT = 130;
 const BALL_RADIUS = 10;
-
-// Assets da IA
-const AI_PROFILE_PIC = imgBlueBall; 
-const AI_GAME_AVATAR = imgRedBall;
 
 type GameEventHandler = (event: string, data: any) => void;
 
@@ -43,11 +44,20 @@ export class LocalGameEngine {
 
   constructor(difficulty: number) {
     this.difficulty = difficulty as 1 | 2 | 3;
-    
-    const myNick = state.user?.nick || 'Você';
-    const myProfilePic = state.user?.avatar || '/assets/default-avatar.png';
-    const myGameAvatar = state.user?.gameAvatar || imgRedBall;
+
     const myGang = state.user?.gang || 'potatoes';
+    let imgProfileDefault = myGang === 'potatoes' ? imgProfileDefaultPotato : imgProfileDefaultTomato;
+    const myNick = state.user?.nick || 'Você';
+    const myProfilePic = state.user?.avatar || imgProfileDefault;
+    const myGameAvatar = state.user?.gameAvatar || imgRedBall;
+    
+    let aiAvatar = aiLvl1;
+
+    if (this.difficulty === 2) {
+      aiAvatar = aiLvl2;
+    } else if (this.difficulty === 3) {
+      aiAvatar = aiLvl3;
+    }
 
     this.state = {
       tableWidth: TABLE_WIDTH,
@@ -75,8 +85,7 @@ export class LocalGameEngine {
           height: DEFAULT_PADDLE_HEIGHT, 
           shield: false, 
           nick: 'C.A.D.E.T.E.', 
-          avatar: AI_PROFILE_PIC,
-          gameAvatar: AI_GAME_AVATAR,
+          avatar: aiAvatar,
           skin: 'ai' 
       },
       

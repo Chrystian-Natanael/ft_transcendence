@@ -22,6 +22,9 @@ import imgPotatoUp from '../assets/moves/Potato_Up.png';
 import imgTomatoDown from '../assets/moves/Tomato_Down.png';
 import imgTomatoUp from '../assets/moves/Tomato_Up.png';
 
+import imgProfileDefaultTomato from '../assets/Profile_images/Tomato_default.jpg';
+import imgProfileDefaultPotato from '../assets/Profile_images/Potato_default.jpg';
+
 
 import { getDefaultAvatar } from "@/components/AvatarOptions";
 import { navigateTo } from "@/main";
@@ -34,7 +37,7 @@ import bgTomatoes from '../assets/gameBackground.png';
 export function getGameHtml() {
     const user = state.user;
     const selectedGang = (user?.gang || 'potatoes') as 'potatoes' | 'tomatoes';
-    const avatarSrcP1 = user?.avatar || getDefaultAvatar(selectedGang);
+    const avatarSrcP1 = user?.avatar  || getDefaultAvatar(selectedGang);
 
     return `
         <div id="game-root" class="relative min-h-screen flex flex-col justify-center items-center overflow-hidden bg-slate-900">
@@ -132,7 +135,10 @@ export class GameController {
     // Rastreamento de movimento dos jogadores
     private p1LastDirection: string = 'DOWN';
     private p2LastDirection: string = 'DOWN';
+
+    private lastP1Y: number = 250; 
     private lastP2Y: number = 250;
+
     
     constructor(source: Socket | { difficulty: number }) {
         this.canvas = document.getElementById('pongCanvas') as HTMLCanvasElement;
@@ -231,7 +237,7 @@ export class GameController {
         const skinKey = `${skin}_${directionKey}`;
         
         const image = this.images[skinKey];
-        return image ? image.src : (skin === 'tomato' ? imgRedBall : imgBlueBall);
+        return image.src;
     }
 
     private toggleOverlay(show: boolean) {
@@ -338,23 +344,47 @@ export class GameController {
         if (this.els['p2-nick']) this.els['p2-nick'].innerText = state.player2.nick;
 
         // Detectar direção do P2 automaticamente comparando posição anterior
-        if (state.player2.y < this.lastP2Y) {
+        if (state.player1.y < this.lastP1Y) {
+            this.p1LastDirection = 'UP';
+        } else if (state.player1.y > this.lastP1Y) {
+            this.p1LastDirection = 'DOWN';
+        }
+        this.lastP1Y = state.player1.y;
+        
+       if (state.player2.y < this.lastP2Y) {
             this.p2LastDirection = 'UP';
         } else if (state.player2.y > this.lastP2Y) {
             this.p2LastDirection = 'DOWN';
         }
         this.lastP2Y = state.player2.y;
 
-        if (this.els['p1-photo']) {
-            const el = this.els['p1-photo'] as HTMLImageElement;
-            const src = state.player1.avatar || imgRedBall;
-            if (el.src !== src) el.src = src;
+        const resolveAvatar = (avatar: string | undefined, skin: string) => {
+        // 1. Se tiver avatar e não for string vazia, usa ele
+        if (avatar && avatar.trim() !== "") {
+            return avatar;
         }
+        // 2. Se não, usa o padrão baseado na Skin (potato ou tomato)
+        // Nota: Certifique-se que o backend está mandando 'potato' ou 'tomato' na skin
+        return skin.includes('tomato') ? imgProfileDefaultTomato : imgProfileDefaultPotato;
+    };
+
+       if (this.els['p1-photo']) {
+            const el = this.els['p1-photo'] as HTMLImageElement;
+            const finalSrc = resolveAvatar(state.player1.avatar, state.player1.skin);
         
+            // Só atualiza o DOM se mudou (performance)
+            if (el.src !== finalSrc && finalSrc) {
+                el.src = finalSrc;
+            }
+        }
+    
         if (this.els['p2-photo']) {
-            const el = this.els['p2-photo'] as HTMLImageElement;
-            const src = state.player2.avatar || imgBlueBall;
-            if (el.src !== src) el.src = src;
+              const el = this.els['p2-photo'] as HTMLImageElement;
+              const finalSrc = resolveAvatar(state.player2.avatar, state.player2.skin);
+
+            if (el.src !== finalSrc && finalSrc) {
+                el.src = finalSrc;
+            }
         }
 
         const bgKey = 'bg_mixed';
@@ -363,6 +393,22 @@ export class GameController {
              if (this.els['stadium-bg'].style.backgroundImage !== newBg) {
                  this.els['stadium-bg'].style.backgroundImage = newBg;
              }
+        }
+
+        if (this.els['p1-skin-img']) {
+            const el = this.els['p1-skin-img'] as HTMLImageElement;
+            // O skin vem do servidor agora correto ('potato' ou 'tomato')
+            const src = this.getSkinImage(state.player1.skin, this.p1LastDirection);
+            if (el.src !== src) el.src = src;
+            el.style.transform = 'scaleX(-1)';
+        }
+        
+        // Imagem P2 (Raquete + Avatar)
+        if (this.els['p2-skin-img']) {
+            const el = this.els['p2-skin-img'] as HTMLImageElement;
+            const src = this.getSkinImage(state.player2.skin, this.p2LastDirection);
+            if (el.src !== src) el.src = src;
+            el.style.transform = 'scaleX(-1)';
         }
 
         // --- 4. Game Avatars (Ao lado da raquete) ---
