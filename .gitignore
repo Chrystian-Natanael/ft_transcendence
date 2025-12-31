@@ -1,6 +1,6 @@
-Front/dist/*
-Back/dist/*
-**/package-lock.json
-**/node_modules/*
-Front/.env
-Front/package-lock.json
+
+node_modules
+.env
+data/*.db
+data/*.db-journal
+!data/.gitkeep

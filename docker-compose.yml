@@ -13,9 +13,10 @@ services:
     environment:
       - PORT=3333
       - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_URL=file:./data/dev.db
     networks:
       - pong-network
-    command: npm run dev
+    command: sh -c "npx prisma generate && npx prisma db push && npm run dev"
 
   frontend:
     build:
@@ -31,7 +32,7 @@ services:
       - "${FRONT_PORT:-5173}:5173"
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://${HOST_IP}::3333
+      - VITE_API_URL=http://${HOST_IP}:3333
     env_file:
       - .env
     networks:
