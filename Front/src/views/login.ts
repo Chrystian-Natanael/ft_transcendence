@@ -125,7 +125,6 @@ export function setupLoginEvents(navigate: (route: Route) => void) {
 				identifier: userInput,
 				password: passInput
 			});
-			console.log("AVATAR AQUI: " + response.user.avatar)
 
 			if (response.requires2FA && response.tempToken) {
 				console.log("TEMP TOKEN: " + response.tempToken);
